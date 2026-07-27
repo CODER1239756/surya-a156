@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Happy Birthday, Suryanshu</title>
+<meta name="description" content="A birthday journey for Suryanshu Sharma.">
+
+<!-- Fonts: Fraunces (display, warm serif) / Inter (body) / Caveat (handwritten) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Inter:wght@300;400;500;600&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+
+<!-- Three.js for the ambient night-drive background (bokeh / floating cubes) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- canvas-confetti for the physically-believable confetti fall -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.2/confetti.browser.min.js"></script>
+
+<style>
+/* ============================================================
+   TOKENS — Night Drive palette. Asphalt navy, headlight amber,
+   crimson ribbon, chrome. Built for a car / tech / travel kid.
+   ============================================================ */
+:root{
+  --bg:            #080b12;
+  --bg-2:          #10141d;
+  --panel:         rgba(255,255,255,0.035);
+  --panel-line:    rgba(255,255,255,0.09);
+  --amber:         #e8a33d;
+  --amber-soft:    #f3c877;
+  --crimson:       #c1443b;
+  --cream:         #f3eee4;
+  --muted:         #9aa1ac;
+  --chrome:        #c9cfd8;
+  --teal:          #3c5a6e;
+  --shadow:        rgba(0,0,0,0.55);
+  --serif: 'Fraunces', Georgia, serif;
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --hand: 'Caveat', cursive;
+}
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+html,body{ background:var(--bg); color:var(--cream); }
+body{
+  font-family:var(--sans);
+  overflow-x:hidden;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  line-height:1.5;
+}
+button{ font-family:inherit; cursor:pointer; }
+a{ color:inherit; }
+::selection{ background:var(--amber); color:#1a1305; }
+
+:focus-visible{
+  outline:2px solid var(--amber-soft);
+  outline-offset:3px;
+  border-radius:4px;
+}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:0.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+
+#bg-canvas{
+  position:fixed; inset:0; width:100%; height:100%;
+  z-index:0; pointer-events:none;
+}
+
+/* ============================================================
+   LOADING SCREEN
+   ============================================================ */
+#loading-screen{
+  position:fixed; inset:0; z-index:100;
+  background:radial-gradient(ellipse at 50% 35%, #121828 0%, #080b12 70%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2.2rem;
+  transition:opacity 1.1s ease, visibility 1.1s ease;
+}
+#loading-screen.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
+
+.loading-mark{
+  font-family:var(--serif); font-weight:500; font-size:clamp(1.1rem,2.4vw,1.5rem);
+  letter-spacing:0.14em; text-transform:uppercase; color:var(--muted);
+}
+.loading-mark span{ color:var(--amber-soft); }
+
+.loading-track-wrap{
+  width:min(420px, 78vw);
+  position:relative;
+  padding-top:34px;
+}
+.cat-pos{
+  position:absolute; top:-30px; left:0;
+  width:56px; height:30px;
+  will-change:transform;
+  transform:translateX(0);
+}
+.cat-run{
+  display:block; width:56px; height:30px;
+  /* 12-frame sprite strip: total width = 12 * frameWidth. We scale strip so each frame renders at 56px wide. */
+  background-image:url('/__l5e/assets-v1/2d16c987-d352-4599-8d02-323eb354e49c/cat-run-strip.png');
+  background-repeat:no-repeat;
+  background-size:672px 30px; /* 12 frames * 56px */
+  background-position:0 0;
+  animation:catRunSprite 0.85s steps(12) infinite;
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,0.55));
+  image-rendering:auto;
+}
+@keyframes catRunSprite{
+  from { background-position:0 0; }
+  to   { background-position:-672px 0; }
+}
+.loading-track{
+  width:100%; height:3px; border-radius:3px;
+  background:rgba(255,255,255,0.08);
+  overflow:hidden; position:relative;
+}
+.loading-fill{
+  height:100%; width:0%;
+  background:linear-gradient(90deg, var(--teal), var(--amber-soft));
+  border-radius:3px;
+}
+.loading-percent{
+  margin-top:0.7rem; font-size:0.75rem; letter-spacing:0.08em;
+  color:var(--muted); text-align:right; font-variant-numeric:tabular-nums;
+}
+.loading-message{
+  min-height:1.4em;
+  font-size:0.95rem; color:var(--chrome);
+  letter-spacing:0.02em;
+  opacity:0; transition:opacity 0.55s ease;
+}
+.loading-message.show{ opacity:1; }
+
+/* ============================================================
+   SCENE FRAMEWORK
+   ============================================================ */
+main#app{ position:relative; z-index:1; }
+.scene{
+  min-height:100vh; width:100%;
+  display:none;
+  position:relative;
+  align-items:center; justify-content:center;
+  padding:6vh 6vw;
+  opacity:0;
+}
+.scene.active{ display:flex; flex-direction:column; }
+.scene.fade-in{ animation:sceneFadeIn 1.5s cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes sceneFadeIn{ from{ opacity:0; transform:translateY(16px);} to{ opacity:1; transform:translateY(0);} }
+
+.eyebrow{
+  font-size:0.72rem; letter-spacing:0.28em; text-transform:uppercase;
+  color:var(--amber-soft); margin-bottom:1rem; text-align:center;
+}
+.btn{
+  appearance:none; border:1px solid var(--panel-line);
+  background:var(--panel); color:var(--cream);
+  padding:0.9rem 2.1rem; border-radius:999px;
+  font-size:0.92rem; letter-spacing:0.05em;
+  backdrop-filter:blur(6px);
+  transition:transform 0.35s cubic-bezier(.4,0,.2,1), background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+.btn:hover{
+  transform:translateY(-2px);
+  border-color:var(--amber-soft);
+  box-shadow:0 8px 30px -8px rgba(232,163,61,0.4);
+}
+.btn:active{ transform:translateY(0); }
+.btn-primary{
+  background:linear-gradient(160deg, var(--amber-soft), var(--amber));
+  color:#1a1305; border:none; font-weight:600;
+}
+.btn-primary:hover{ box-shadow:0 10px 34px -8px rgba(232,163,61,0.55); }
+.btn-row{ display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; margin-top:2.2rem; }
+
+/* ============================================================
+   SCENE — REVEAL
+   ============================================================ */
+#scene-reveal{ text-align:center; }
+.reveal-title{
+  font-family:var(--serif); font-weight:600;
+  font-size:clamp(2.4rem, 7vw, 5rem);
+  line-height:1.05;
+  background:linear-gradient(160deg, var(--cream), var(--chrome) 60%, var(--amber-soft));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  opacity:0; transform:translateY(18px);
+  animation:titleIn 1.5s 0.3s cubic-bezier(.16,1,.3,1) forwards;
+}
+@keyframes titleIn{ to{ opacity:1; transform:translateY(0);} }
+.reveal-sub{
+  margin-top:1.1rem; color:var(--muted); font-size:1.05rem;
+  opacity:0; animation:titleIn 1.5s 0.9s cubic-bezier(.16,1,.3,1) forwards;
+}
+#confetti-canvas{ position:fixed; inset:0; z-index:2; pointer-events:none; }
+.reveal-continue{ opacity:0; animation:titleIn 1.3s 1.9s cubic-bezier(.16,1,.3,1) forwards; }
+
+/* ============================================================
+   SCENE — DRIVE (car places the cake, then leaves)
+   ============================================================ */
+#scene-drive{ overflow:hidden; }
+.drive-stage{
+  position:relative; width:100%; height:46vh; min-height:300px;
+  border-bottom:1px solid var(--panel-line);
+}
+.road-line{
+  position:absolute; bottom:22%; left:0; width:100%; height:2px;
+  background:repeating-linear-gradient(90deg, var(--chrome) 0 26px, transparent 26px 52px);
+  opacity:0.28;
+}
+.drive-caption{
+  text-align:center; margin-top:1.6rem; color:var(--muted); font-size:0.95rem;
+  opacity:0; transition:opacity 0.8s ease;
+}
+.drive-caption.show{ opacity:1; }
+
+.wish-text{
+  position:absolute; left:50%; top:8%; z-index:4;
+  transform:translate(-50%,-220%);
+  opacity:0;
+  font-family:var(--serif); font-weight:500;
+  font-size:clamp(1.7rem,4.4vw,2.6rem);
+  color:var(--cream);
+  text-shadow:0 10px 30px rgba(0,0,0,0.65);
+  white-space:nowrap;
+}
+.wish-text.drop{ animation:wishDrop 1.3s cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes wishDrop{
+  0%  { transform:translate(-50%,-260%); opacity:0; }
+  55% { transform:translate(-50%,10%);   opacity:1; }
+  75% { transform:translate(-50%,-3%);   opacity:1; }
+  100%{ transform:translate(-50%,0%);    opacity:1; }
+}
+
+.rig{
+  position:absolute; bottom:22%; left:0;
+  display:flex; align-items:flex-end;
+  will-change:transform;
+}
+.rig .car{ position:relative; width:180px; height:86px; margin-right:-6px; filter:drop-shadow(0 18px 14px rgba(0,0,0,0.55)); }
+.rig.driving .wheel{ animation:wheelSpin 0.5s linear infinite; }
+.rig.driving .trailer-wheel{ animation:wheelSpin 0.5s linear infinite; }
+.rig.driving .car{ animation:suspensionBounce 0.32s ease-in-out infinite; }
+.rig.driving .cake-wrap{ animation:cakeJiggle 0.3s ease-in-out infinite; }
+@keyframes wheelSpin{ to{ transform:rotate(360deg); } }
+@keyframes suspensionBounce{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-2px);} }
+@keyframes cakeJiggle{ 0%,100%{ transform:translateY(0) rotate(0deg);} 50%{ transform:translateY(-1.5px) rotate(0.4deg);} }
+
+.car-body{
+  position:absolute; bottom:22px; left:0; width:180px; height:46px;
+  background:linear-gradient(180deg, #d63e33 0%, #9c2a22 55%, #7c211b 100%);
+  border-radius:16px 30px 10px 10px / 20px 20px 8px 8px;
+  box-shadow:inset 0 3px 4px rgba(255,255,255,0.25), inset 0 -8px 12px rgba(0,0,0,0.35);
+}
+.car-cabin{
+  position:absolute; bottom:44px; left:38px; width:96px; height:32px;
+  background:linear-gradient(180deg, rgba(60,90,110,0.9), rgba(20,30,40,0.95));
+  border-radius:16px 20px 4px 4px;
+  box-shadow:inset 0 2px 3px rgba(255,255,255,0.18);
+}
+.car-window{
+  position:absolute; bottom:47px; left:44px; width:84px; height:20px;
+  background:linear-gradient(120deg, #9fd0e8, #375061 70%);
+  border-radius:12px 16px 2px 2px; opacity:0.85;
+}
+.headlight{
+  position:absolute; bottom:32px; right:-2px; width:10px; height:10px;
+  background:radial-gradient(circle, #fff6d8, var(--amber-soft));
+  border-radius:50%;
+  box-shadow:0 0 14px 4px rgba(243,200,119,0.85);
+}
+.taillight{
+  position:absolute; bottom:32px; left:-2px; width:7px; height:8px;
+  background:var(--crimson); border-radius:2px;
+  box-shadow:0 0 6px 2px rgba(193,68,59,0.7);
+}
+.wheel{
+  position:absolute; bottom:0; width:34px; height:34px; border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, #4a4d52, #17181b 70%);
+  border:3px solid #0c0d0f;
+  box-shadow:0 4px 6px rgba(0,0,0,0.5);
+}
+.wheel::after{
+  content:''; position:absolute; inset:9px; border-radius:50%;
+  background:radial-gradient(circle, var(--chrome), #7a7f88 80%);
+}
+.wheel.front{ right:26px; }
+.wheel.rear{ left:22px; }
+.car-shadow{
+  position:absolute; bottom:-6px; left:8px; width:164px; height:14px;
+  background:radial-gradient(ellipse, rgba(0,0,0,0.55), transparent 72%);
+  border-radius:50%;
+}
+.hitch{ width:22px; height:4px; background:#4a4d52; margin-bottom:20px; border-radius:2px; }
+
+.cake-wrap{ position:relative; width:150px; height:120px; margin-left:-4px; }
+.cake-wrap.landed{ animation:cakeSettle 0.7s cubic-bezier(.34,1.56,.64,1); }
+@keyframes cakeSettle{ 0%{ transform:translateY(-16px);} 55%{ transform:translateY(5px);} 100%{ transform:translateY(0);} }
+
+.trailer-wheel{
+  position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+  width:24px; height:24px; border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, #4a4d52, #17181b 70%);
+  border:2px solid #0c0d0f;
+}
+.cake-tier{
+  position:absolute; left:50%; transform:translateX(-50%);
+  border-radius:8px;
+  box-shadow:inset 0 3px 5px rgba(255,255,255,0.25), 0 6px 10px rgba(0,0,0,0.4);
+}
+.cake-tier.t1{ bottom:22px; width:120px; height:34px; background:linear-gradient(180deg, #f9e3ea, #e8b9cb); }
+.cake-tier.t2{ bottom:52px; width:92px; height:28px; background:linear-gradient(180deg, #f6d4e0, #e2a5bc); }
+.cake-tier.t3{ bottom:76px; width:64px; height:22px; background:linear-gradient(180deg, #f2c5d6, #d98fab); }
+.cake-tier::before{
+  content:''; position:absolute; inset:0 0 auto 0; height:6px;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+  border-radius:8px 8px 0 0;
+}
+.candle{ position:absolute; bottom:98px; width:5px; height:20px; background:linear-gradient(180deg, var(--amber-soft), var(--crimson)); border-radius:2px; }
+.candle.c1{ left:50%; transform:translateX(-50%); }
+.candle.c2{ left:calc(50% - 16px); }
+.candle.c3{ left:calc(50% + 12px); }
+.flame{
+  position:absolute; top:-11px; left:50%; transform:translateX(-50%);
+  width:8px; height:12px; border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+  background:radial-gradient(circle at 50% 70%, #fff6d0, var(--amber-soft) 55%, var(--crimson) 100%);
+  box-shadow:0 0 10px 3px rgba(243,200,119,0.7);
+  animation:flicker 0.6s ease-in-out infinite alternate;
+}
+@keyframes flicker{ from{ transform:translateX(-50%) scale(1) rotate(-2deg);} to{ transform:translateX(-50%) scale(0.92,1.06) rotate(2deg);} }
+
+/* ============================================================
+   SCENE — CAKE / BLOW OUT CANDLES
+   ============================================================ */
+#scene-cake{ text-align:center; }
+.cake-hero{ position:relative; width:min(320px, 68vw); height:230px; margin:0 auto; }
+.cake-hero .cake-tier.t1{ width:220px; height:60px; bottom:0; }
+.cake-hero .cake-tier.t2{ width:168px; height:48px; bottom:52px; }
+.cake-hero .cake-tier.t3{ width:112px; height:38px; bottom:92px; }
+.cake-hero .candle{ bottom:126px; height:26px; }
+.cake-hero .candle.c2{ left:calc(50% - 30px); }
+.cake-hero .candle.c3{ left:calc(50% + 24px); }
+.candle.out .flame{ display:none; }
+.smoke{ position:absolute; top:-14px; left:50%; width:5px; height:5px; border-radius:50%; background:rgba(220,220,220,0.55); opacity:0; pointer-events:none; }
+.smoke.rise{ animation:smokeRise 1.4s ease-out forwards; }
+@keyframes smokeRise{
+  0%{ opacity:0.7; transform:translate(-50%,0) scale(1); }
+  100%{ opacity:0; transform:translate(-50%,-38px) scale(3.2); }
+}
+
+.blow-panel{ margin-top:2.4rem; max-width:420px; margin-left:auto; margin-right:auto; padding:1.4rem 1.6rem; border-radius:16px; background:var(--panel); border:1px solid var(--panel-line); }
+.blow-status{ font-size:0.92rem; color:var(--muted); min-height:1.4em; transition:opacity 0.4s ease; }
+.meter{ margin-top:0.9rem; height:6px; border-radius:6px; background:rgba(255,255,255,0.08); overflow:hidden; }
+.meter-fill{ height:100%; width:0%; background:linear-gradient(90deg, var(--teal), var(--amber-soft)); transition:width 0.15s ease-out; }
+#btn-enable-media{ display:none; }
+
+.camera-frame{ position:relative; width:min(360px, 80vw); aspect-ratio:4/3; margin:1.6rem auto 0; border-radius:18px; overflow:hidden; border:1px solid var(--panel-line); background:#000; opacity:0; transform:scale(0.97); transition:opacity 0.6s ease, transform 0.6s ease; }
+.camera-frame.show{ opacity:1; transform:scale(1); }
+.camera-frame video{ width:100%; height:100%; object-fit:cover; display:block; }
+.rec-dot{ position:absolute; top:12px; left:12px; display:flex; align-items:center; gap:6px; font-size:0.7rem; letter-spacing:0.1em; color:var(--cream); background:rgba(0,0,0,0.4); padding:4px 8px; border-radius:999px; opacity:0; transition:opacity 0.4s ease; }
+.rec-dot.show{ opacity:1; }
+.rec-dot::before{ content:''; width:7px; height:7px; border-radius:50%; background:var(--crimson); animation:recPulse 1s ease-in-out infinite; }
+@keyframes recPulse{ 50%{ opacity:0.35; } }
+
+/* ============================================================
+   SCENE — PREVIEW
+   ============================================================ */
+#scene-preview{ text-align:center; }
+.preview-frame{ width:min(420px, 84vw); aspect-ratio:4/3; margin:1.6rem auto 0; border-radius:18px; overflow:hidden; border:1px solid var(--panel-line); background:#000; }
+.preview-frame video{ width:100%; height:100%; object-fit:cover; }
+.toast{
+  position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--panel); border:1px solid var(--panel-line); backdrop-filter:blur(8px);
+  padding:0.8rem 1.4rem; border-radius:999px; font-size:0.85rem; color:var(--cream);
+  opacity:0; transition:opacity 0.4s ease, transform 0.4s ease; z-index:50;
+}
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ============================================================
+   SCENE — GALLERY (one long sagging clothesline, scrolls right)
+   ============================================================ */
+#scene-gallery{ align-items:stretch; padding-left:0; padding-right:0; }
+.gallery-title{ text-align:center; margin-bottom:1.6rem; }
+.gallery-title h2{ font-family:var(--serif); font-weight:500; font-size:clamp(1.6rem,4vw,2.4rem); }
+.gallery-strings{ width:100%; padding:20px 0 2rem; }
+.clothesline-scroll{
+  width:100%; overflow-x:auto; overflow-y:visible;
+  padding:40px 6vw 1.5rem;
+  scrollbar-color:var(--panel-line) transparent;
+}
+.clothesline-row{
+  position:relative; min-width:1180px; width:max-content;
+  overflow:visible;
+}
+.rope-svg{ position:absolute; top:0; left:0; width:100%; height:66px; display:block; }
+.line-photo{ position:absolute; top:0; left:0; transform:translateX(-50%); z-index:2; }
+.clothespin{
+  display:block; width:13px; height:25px; margin:0 auto;
+  transform:translateY(-58%);
+  background:linear-gradient(90deg,#dcc39a,#a9814f 45%,#dcc39a);
+  border-radius:4px 4px 2px 2px;
+  box-shadow:0 3px 4px rgba(0,0,0,0.5);
+  position:relative;
+  z-index:3;
+}
+.clothespin::before{
+  content:''; position:absolute; top:34%; left:-2px; right:-2px; height:3.5px;
+  background:#4d463c; border-radius:1px;
+  box-shadow:0 1px 1px rgba(0,0,0,0.4);
+}
+.clothespin::after{
+  content:''; position:absolute; bottom:-2px; left:50%; width:1.5px; height:55%;
+  background:rgba(0,0,0,0.35); transform:translateX(-50%);
+}
+.photo-hang{
+  margin-top:-13px;
+  width:150px; padding:12px 12px 30px; background:#f4efe4;
+  border-radius:2px;
+  box-shadow:0 14px 24px -10px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.4) inset,
+    0 -3px 4px -2px rgba(0,0,0,0.28);
+  transform:rotate(var(--tilt,-2deg));
+  animation:sway 5.8s ease-in-out infinite;
+  animation-delay:var(--delay,0s);
+  transform-origin:50% -13px;
+  position:relative;
+}
+@keyframes sway{ 0%,100%{ transform:rotate(var(--tilt,-2deg)); } 50%{ transform:rotate(calc(var(--tilt,-2deg) * -1)); } }
+.photo-inner{
+  width:100%; aspect-ratio:1/1;
+  background:
+    repeating-linear-gradient(135deg, rgba(0,0,0,0.03) 0 2px, transparent 2px 6px),
+    linear-gradient(160deg, #2a3444, #171c26 70%);
+  border-radius:1px;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--muted); font-size:0.7rem; letter-spacing:0.03em; text-align:center; padding:0.75rem;
+}
+.photo-caption{ position:absolute; bottom:9px; left:0; right:0; text-align:center; font-family:var(--hand); font-size:0.98rem; color:#3a3226; }
+
+.letter-hang{
+  margin-top:-13px; width:210px; padding:20px 18px 26px;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(0,0,0,0.02), transparent 60%),
+    linear-gradient(175deg, #f7f1e2, #efe6cf);
+  border-radius:2px;
+  box-shadow:0 18px 30px -12px rgba(0,0,0,0.65), 0 -3px 4px -2px rgba(0,0,0,0.28);
+  transform:rotate(var(--tilt,2deg));
+  animation:sway 6.6s ease-in-out infinite;
+  animation-delay:var(--delay,0s);
+  transform-origin:50% -13px;
+  position:relative;
+}
+.letter-hang::before{
+  content:''; position:absolute; inset:0; border-radius:2px;
+  background:repeating-linear-gradient(0deg, transparent 0 26px, rgba(60,60,60,0.08) 26px 27px);
+  pointer-events:none;
+}
+.letter-text{ font-family:var(--hand); font-size:1.2rem; line-height:1.5; color:#332a1c; position:relative; z-index:1; }
+.letter-sign{ margin-top:0.8rem; font-family:var(--hand); font-size:1.3rem; color:#332a1c; text-align:right; }
+
+.gallery-cta{ text-align:center; margin-top:2.2rem; padding-bottom:4rem; }
+
+/* ============================================================
+   SCENE — FINAL
+   ============================================================ */
+#scene-final{ text-align:center; }
+.final-thanks{ font-family:var(--serif); font-weight:500; font-size:clamp(1.6rem,4vw,2.4rem); max-width:640px; margin:0 auto 2.6rem; }
+.quote{
+  font-family:var(--serif); font-style:italic; font-weight:400;
+  font-size:clamp(1.2rem,3vw,1.7rem); color:var(--chrome);
+  opacity:0; transform:translateY(10px);
+  margin:0.6rem 0; transition:opacity 1.3s cubic-bezier(.22,1,.36,1), transform 1.3s cubic-bezier(.22,1,.36,1);
+}
+.quote.show{ opacity:1; transform:translateY(0); }
+.closing{ margin-top:3rem; opacity:0; transition:opacity 1.8s ease; color:var(--muted); font-size:0.95rem; letter-spacing:0.04em; }
+.closing.show{ opacity:1; }
+.closing strong{ display:block; margin-top:0.4rem; color:var(--amber-soft); font-family:var(--serif); font-size:1.3rem; font-weight:500; }
+.end-row{ opacity:0; transition:opacity 1.4s ease; }
+.end-row.show{ opacity:1; }
+
+/* ============================================================
+   SCENE — CREDITS
+   ============================================================ */
+#scene-credits{ text-align:center; }
+.credits-title{
+  font-family:var(--serif); font-weight:600; text-transform:uppercase;
+  letter-spacing:0.16em;
+  font-size:clamp(2.2rem, 6vw, 3.6rem);
+  color:var(--cream);
+  margin-bottom:clamp(3rem, 8vh, 5rem);
+}
+.credits-block{ max-width:480px; margin:0 auto clamp(2.4rem, 6vh, 3.6rem); }
+.credits-block + .credits-block{ padding-top:clamp(2rem, 5vh, 3rem); border-top:1px solid var(--panel-line); }
+.credits-role{
+  font-size:0.72rem; letter-spacing:0.24em; text-transform:uppercase;
+  color:var(--amber-soft); margin-bottom:0.6rem;
+}
+.credits-name{
+  font-family:var(--serif); font-weight:500; font-size:clamp(1.4rem, 3.4vw, 1.9rem);
+  color:var(--cream); margin-bottom:0.9rem;
+}
+.credits-desc{ color:var(--muted); font-size:0.95rem; line-height:1.7; }
+.credits-replay{
+  appearance:none; background:none; border:none; color:var(--muted);
+  font-size:0.82rem; letter-spacing:0.04em; text-decoration:underline;
+  text-underline-offset:4px; margin-top:1rem; cursor:pointer;
+  transition:color 0.3s ease;
+}
+.credits-replay:hover{ color:var(--amber-soft); }
+
+.asset-note{ display:none; }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+<!-- ============================================================
+     LOADING SCREEN
+     ============================================================ -->
+<div id="loading-screen" role="status" aria-live="polite">
+  <div class="loading-mark">Suryanshu<span>.</span> Turns Sixteen</div>
+  <div class="loading-track-wrap">
+    <div class="cat-pos" id="cat-pos" aria-hidden="true">
+      <div class="cat-run"></div>
+    </div>
+    <div class="loading-track"><div class="loading-fill" id="loading-fill"></div></div>
+    <div class="loading-percent" id="loading-percent">0%</div>
+  </div>
+  <div class="loading-message" id="loading-message">Repairing engine...</div>
+</div>
+
+<main id="app" hidden>
+
+  <!-- ============================================================
+       SCENE 1 — REVEAL
+       ============================================================ -->
+  <section id="scene-reveal" class="scene">
+    <p class="eyebrow">Sixteen years, one incredible person</p>
+    <h1 class="reveal-title">Happy Birthday,<br>Suryanshu!</h1>
+    <p class="reveal-sub">Buckle up. This one's got a few surprises in the trunk.</p>
+    <div class="btn-row reveal-continue">
+      <button class="btn btn-primary" id="btn-to-drive">Continue</button>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SCENE 2 — CAR PLACES THE CAKE, THEN LEAVES
+       ============================================================ -->
+  <section id="scene-drive" class="scene">
+    <p class="eyebrow">Special delivery</p>
+    <div class="drive-stage" id="drive-stage">
+      <div class="road-line"></div>
+      <div class="rig" id="rig">
+        <div class="car" id="car-el">
+          <div class="car-shadow"></div>
+          <div class="car-body"></div>
+          <div class="car-cabin"></div>
+          <div class="car-window"></div>
+          <div class="headlight"></div>
+          <div class="taillight"></div>
+          <div class="wheel front"></div>
+          <div class="wheel rear"></div>
+        </div>
+        <div class="hitch"></div>
+        <div class="cake-wrap" id="cake-wrap">
+          <div class="trailer-wheel"></div>
+          <div class="cake-tier t1"></div>
+          <div class="cake-tier t2"></div>
+          <div class="cake-tier t3"></div>
+          <div class="candle c1"><span class="flame"></span></div>
+          <div class="candle c2"><span class="flame"></span></div>
+          <div class="candle c3"><span class="flame"></span></div>
+        </div>
+      </div>
+      <div class="wish-text" id="wish-text">Make a Wish</div>
+    </div>
+    <p class="drive-caption" id="drive-caption">Some deliveries you just have to make yourself.</p>
+  </section>
+
+  <!-- ============================================================
+       SCENE 3 — BLOW OUT THE CANDLES / RECORD
+       ============================================================ -->
+  <section id="scene-cake" class="scene">
+    <p class="eyebrow">Make a wish</p>
+    <div class="cake-hero" id="cake-hero">
+      <div class="cake-tier t1"></div>
+      <div class="cake-tier t2"></div>
+      <div class="cake-tier t3"></div>
+      <div class="candle c1" data-candle="1"><span class="flame"></span></div>
+      <div class="candle c2" data-candle="2"><span class="flame"></span></div>
+      <div class="candle c3" data-candle="3"><span class="flame"></span></div>
+    </div>
+
+    <div class="blow-panel">
+      <p class="blow-status" id="blow-status">Getting ready to listen for your breath...</p>
+      <div class="meter"><div class="meter-fill" id="meter-fill"></div></div>
+      <div class="btn-row" style="margin-top:1.2rem;">
+        <button class="btn btn-primary" id="btn-enable-media">Allow Camera &amp; Microphone</button>
+      </div>
+    </div>
+
+    <div class="camera-frame" id="camera-frame">
+      <video id="live-video" autoplay playsinline muted></video>
+      <div class="rec-dot" id="rec-dot">Recording</div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SCENE 4 — PREVIEW / SAVE / DOWNLOAD
+       ============================================================ -->
+  <section id="scene-preview" class="scene">
+    <p class="eyebrow">Got it</p>
+    <h2 style="font-family:var(--serif); font-weight:500; font-size:clamp(1.5rem,3.6vw,2.1rem);">Your candle moment</h2>
+    <div class="preview-frame">
+      <video id="preview-video" controls playsinline></video>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="btn-save-gallery">Save to Birthday Gallery</button>
+      <button class="btn" id="btn-download-video">Download as MP4</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-to-gallery">Next</button>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SCENE 5 — MEMORY CLOTHESLINES + LETTER
+       ============================================================ -->
+  <section id="scene-gallery" class="scene">
+    <div class="gallery-title">
+      <p class="eyebrow">A few frames from the road so far</p>
+      <h2>Memories, Hung Out to Dry</h2>
+    </div>
+
+    <div class="gallery-strings" id="gallery-strings">
+      <!-- ASSET NOTE: replace each .photo-inner background with an actual
+           photograph as memories are supplied. The clip, sag and sway
+           animation keep working unchanged; only swap the content inside. -->
+      <div class="clothesline-scroll">
+        <div class="clothesline-row" id="row-main">
+          <svg class="rope-svg"></svg>
+          <div class="line-photo" data-tilt="-1.2">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:-1.2deg; --delay:0.3s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-01.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">the very beginning</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="1.0">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:1.0deg; --delay:0.14s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-02.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">in his father's arms</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="0.2">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:0.2deg; --delay:0.73s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-03.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">before he could talk back</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="-3.0">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:-3.0deg; --delay:1.01s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-04.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">already opinionated</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="-3.1">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:-3.1deg; --delay:0.87s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-05.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">reporting for preschool duty</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="-2.9">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:-2.9deg; --delay:0.18s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-06.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">first day jitters</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="-0.5">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:-0.5deg; --delay:1.65s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-07.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">an early birthday, one of many</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="-2.6">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:-2.6deg; --delay:0.45s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-08.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">chasing pigeons, not a care in the world</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="0.9">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:0.9deg; --delay:1.9s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-09.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">the rebel star, even back then</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="0.5">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:0.5deg; --delay:0.79s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-10.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">holi, and a rare quiet moment</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="3.2">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:3.2deg; --delay:0.09s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-11.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">one more take of the same afternoon</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="2.4">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:2.4deg; --delay:0.58s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-12.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">mid-conversation, mid-mall</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="-2.4">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:-2.4deg; --delay:0.24s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-13.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">low light, high spirits</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="-1.3">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:-1.3deg; --delay:1.63s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-14.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">chigma boi, forever and always</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="-2.2">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:-2.2deg; --delay:1.16s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-15.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">fueled entirely by Red Bull</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="0.9">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:0.9deg; --delay:0.74s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-16.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">not everything needs an explanation</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="0.3">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:0.3deg; --delay:0.13s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-17.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">somewhere between class 6 and 10</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="-3.0">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:-3.0deg; --delay:0.41s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-18.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">laughing at something only he remembers</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="1.2">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:1.2deg; --delay:0.86s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <img src="assets/gallery/memory-19.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
+              </div>
+              <div class="photo-caption">sixteen looks good on him</div>
+            </div>
+          </div>
+
+          <div class="line-photo" data-tilt="-1.3">
+            <span class="clothespin"></span>
+            <div class="photo-hang" style="--tilt:-1.3deg; --delay:1.17s;">
+              <div class="photo-inner" style="padding:0; background:none;">
+                <video src="assets/gallery/memory-video.mov" muted loop autoplay playsinline style="width:100%; height:100%; object-fit:cover; display:block;"></video>
+              </div>
+              <div class="photo-caption">a moment, caught on camera</div>
+            </div>
+          </div>
+
+          <!-- ASSET NOTE: replace .letter-text with the real handwritten note
+               (or swap this card for a scanned image) once it's ready. -->
+          <div class="line-photo" data-tilt="2.2">
+            <span class="clothespin"></span>
+            <div class="letter-hang" style="--tilt:2.2deg; --delay:0.9s;">
+              <p class="letter-text">Suryanshu — this whole thing started as a joke about your driving and somehow turned into this. Happy sixteenth. There's a lot more coming, this is just the first draft of a very long friendship.</p>
+              <p class="letter-sign">— your best friend</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gallery-cta">
+      <button class="btn btn-primary" id="btn-to-final">Last Wishes</button>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SCENE 6 — FINAL
+       ============================================================ -->
+  <section id="scene-final" class="scene">
+    <p class="eyebrow">Before you go</p>
+    <p class="final-thanks">Thank you for sixteen years of being exactly yourself. Here's to the road still ahead.</p>
+    <p class="quote" id="quote-1">"You are my person."</p>
+    <p class="quote" id="quote-2">"Life is brighter with you."</p>
+    <p class="quote" id="quote-3">"Cheers to another trip around the sun."</p>
+    <div class="closing" id="closing-msg">
+      With all of it
+      <strong>Happy 16th, Suryanshu.</strong>
+    </div>
+    <div class="btn-row end-row" id="end-row">
+      <button class="btn" id="btn-to-credits">The End</button>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SCENE 7 — CREDITS
+       ============================================================ -->
+  <section id="scene-credits" class="scene">
+    <h2 class="credits-title">Credits</h2>
+
+    <div class="credits-block">
+      <p class="credits-role">Creator of the site</p>
+      <p class="credits-name">Drish Shah</p>
+      <p class="credits-desc">An enthusiastic coder and CTE, and Suryanshu's best friend for nearly five years now. This whole thing was built to say, in some small way, what doesn't always get said out loud — happy birthday, and here's to many more.</p>
+    </div>
+
+    <div class="credits-block">
+      <p class="credits-role">Photos and video management</p>
+      <p class="credits-name">Devina Samariya</p>
+      <p class="credits-desc">Surya's girl best friend, who helped pull these memories together for him. Wishing you a very happy birthday, Suryanshu.</p>
+    </div>
+
+    <div class="credits-cta-row" style="display:flex;flex-direction:column;gap:0.9rem;align-items:center;margin-top:1.4rem;">
+      <a class="btn btn-primary" href="/bulletin" style="text-decoration:none;">Wish Well Bulletin Board</a>
+      <button class="credits-replay" id="btn-replay" type="button">Watch it all again</button>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   EASING HELPERS
+   ============================================================ */
+const easeOutCubic = t => 1 - Math.pow(1-t, 3);
+const easeInCubic  = t => t*t*t;
+const easeInOutCubic = t => t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+
+function animateX(el, from, to, duration, ease, onDone){
+  const start = performance.now();
+  function frame(now){
+    const p = Math.min(1, (now-start)/duration);
+    const val = from + (to-from)*ease(p);
+    el.style.transform = 'translateX(' + val + 'px)';
+    if(p < 1){ requestAnimationFrame(frame); }
+    else if(onDone){ onDone(); }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ============================================================
+   AMBIENT THREE.JS BACKGROUND
+   ============================================================ */
+let scene, camera, renderer, particles, cubes = [];
+function initBG(){
+  const canvas = document.getElementById('bg-canvas');
+  if(!window.THREE || !canvas) return;
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 100);
+  camera.position.z = 18;
+
+  renderer = new THREE.WebGLRenderer({ canvas, alpha:true, antialias:true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.6));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  const count = 140;
+  const geo = new THREE.BufferGeometry();
+  const positions = new Float32Array(count*3);
+  for(let i=0;i<count;i++){
+    positions[i*3]   = (Math.random()-0.5)*40;
+    positions[i*3+1] = (Math.random()-0.5)*24;
+    positions[i*3+2] = (Math.random()-0.5)*20;
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(positions,3));
+  const mat = new THREE.PointsMaterial({ color:0xe8a33d, size:0.06, transparent:true, opacity:0.5 });
+  particles = new THREE.Points(geo, mat);
+  scene.add(particles);
+
+  const cubeGeo = new THREE.BoxGeometry(0.9,0.9,0.9);
+  for(let i=0;i<5;i++){
+    const cubeMat = new THREE.MeshBasicMaterial({ color: i%2===0 ? 0x3c5a6e : 0x2a3444, transparent:true, opacity:0.35 });
+    const cube = new THREE.Mesh(cubeGeo, cubeMat);
+    cube.position.set((Math.random()-0.5)*24, (Math.random()-0.5)*14, -6 - Math.random()*8);
+    cube.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, 0);
+    cube.userData.speed = 0.001 + Math.random()*0.002;
+    scene.add(cube);
+    cubes.push(cube);
+  }
+  window.addEventListener('resize', onResizeBG);
+  animateBG();
+}
+function onResizeBG(){
+  if(!renderer) return;
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+function animateBG(){
+  requestAnimationFrame(animateBG);
+  if(!renderer) return;
+  particles.rotation.y += 0.0004;
+  cubes.forEach(c=>{ c.rotation.x += c.userData.speed; c.rotation.y += c.userData.speed*0.8; });
+  renderer.render(scene, camera);
+}
+
+/* ============================================================
+   LOADING SEQUENCE — smoothed with a decoupled display value so
+   the cat and bar glide continuously regardless of how jumpy the
+   underlying "work" progress is. The run-cycle animation (gallop)
+   is a separate, self-looping CSS animation on the cat itself, so
+   position updates never interrupt or restart its motion.
+   ============================================================ */
+const loadingMessages = [
+  { at:0,  text:'Repairing engine...' },
+  { at:20, text:'Filling oil...' },
+  { at:42, text:'Starting engine...' },
+  { at:64, text:'Calibrating systems...' },
+  { at:84, text:'Adding final touches...' },
+  { at:99, text:'Ready.' }
+];
+function runLoading(){
+  const fill = document.getElementById('loading-fill');
+  const pct = document.getElementById('loading-percent');
+  const msg = document.getElementById('loading-message');
+  const catPos = document.getElementById('cat-pos');
+  const trackWrap = document.querySelector('.loading-track-wrap');
+
+  let targetProgress = 0;
+  let displayProgress = 0;
+  let shownIdx = -1;
+  let finished = false;
+
+  function bumpTarget(){
+    targetProgress = Math.min(100, targetProgress + Math.random()*3 + 1.2);
+    if(targetProgress < 100) setTimeout(bumpTarget, 260 + Math.random()*220);
+  }
+  bumpTarget();
+
+  function renderFrame(){
+    displayProgress += (targetProgress - displayProgress) * 0.09;
+    if(targetProgress >= 100 && displayProgress > 99.4) displayProgress = 100;
+
+    const trackWidth = trackWrap.clientWidth - 56;
+    catPos.style.transform = 'translateX(' + (trackWidth * displayProgress/100) + 'px)';
+    fill.style.width = displayProgress + '%';
+    pct.textContent = Math.round(displayProgress) + '%';
+
+    let idx = 0;
+    for(let i=0;i<loadingMessages.length;i++){ if(displayProgress >= loadingMessages[i].at) idx = i; }
+    if(idx !== shownIdx){
+      shownIdx = idx;
+      msg.classList.remove('show');
+      setTimeout(()=>{ msg.textContent = loadingMessages[idx].text; msg.classList.add('show'); }, 180);
+    }
+
+    if(displayProgress >= 100 && !finished){
+      finished = true;
+      setTimeout(()=>{
+        document.getElementById('loading-screen').classList.add('hidden');
+        document.getElementById('app').hidden = false;
+        showScene('scene-reveal');
+        launchConfetti();
+      }, 750);
+      return;
+    }
+    requestAnimationFrame(renderFrame);
+  }
+  msg.classList.add('show');
+  requestAnimationFrame(renderFrame);
+}
+
+/* ============================================================
+   SCENE MANAGER
+   ============================================================ */
+function showScene(id){
+  document.querySelectorAll('.scene').forEach(s=> s.classList.remove('active','fade-in'));
+  const target = document.getElementById(id);
+  target.classList.add('active');
+  requestAnimationFrame(()=> target.classList.add('fade-in'));
+  window.scrollTo({ top:0, behavior:'auto' });
+}
+
+function launchConfetti(){
+  if(!window.confetti) return;
+  const duration = 2600;
+  const end = Date.now() + duration;
+  (function frame(){
+    confetti({ particleCount:3, angle:60, spread:55, origin:{ x:0 }, gravity:0.9, scalar:0.8, colors:['#e8a33d','#c1443b','#f3eee4','#3c5a6e'] });
+    confetti({ particleCount:3, angle:120, spread:55, origin:{ x:1 }, gravity:0.9, scalar:0.8, colors:['#e8a33d','#c1443b','#f3eee4','#3c5a6e'] });
+    if(Date.now() < end) requestAnimationFrame(frame);
+  })();
+}
+
+/* ============================================================
+   SCENE 2 — DRIVE: car carries the cake in, sets it down at
+   center, then pulls away and fully exits before "Make a Wish"
+   drops in. Every phase is timed off the previous one finishing,
+   never overlapping.
+   ============================================================ */
+function startDrive(){
+  showScene('scene-drive');
+
+  const stage = document.getElementById('drive-stage');
+  const rig = document.getElementById('rig');
+  const hitch = rig.querySelector('.hitch');
+  const cakeWrap = document.getElementById('cake-wrap');
+  const wishText = document.getElementById('wish-text');
+  const caption = document.getElementById('drive-caption');
+
+  // reset in case this scene is replayed
+  rig.style.display = '';
+  rig.style.transform = 'translateX(0px)';
+  rig.classList.remove('driving');
+  cakeWrap.classList.remove('landed');
+  cakeWrap.style.position = ''; cakeWrap.style.left = ''; cakeWrap.style.top = ''; cakeWrap.style.margin = '';
+  if(cakeWrap.parentElement !== rig) rig.appendChild(cakeWrap);
+  hitch.style.display = '';
+  hitch.style.transition = '';
+  hitch.style.opacity = '1';
+  wishText.classList.remove('drop');
+  caption.classList.remove('show');
+
+  requestAnimationFrame(()=>{
+    const stageRect = stage.getBoundingClientRect();
+    const cakeRect = cakeWrap.getBoundingClientRect();
+    const cakeNaturalLeft = cakeRect.left - stageRect.left;
+    const cakeWidth = cakeRect.width;
+
+    const startX = -(cakeNaturalLeft + cakeWidth) - 100;
+    const placeX = (stageRect.width/2) - (cakeNaturalLeft + cakeWidth/2);
+    const exitX  = stageRect.width + 140;
+
+    rig.style.transform = 'translateX(' + startX + 'px)';
+
+    requestAnimationFrame(()=>{
+      rig.classList.add('driving');
+      // PHASE 1 — arrive and decelerate into place (~2.3s)
+      animateX(rig, startX, placeX, 2300, easeOutCubic, ()=>{
+        rig.classList.remove('driving');
+
+        // detach: freeze the cake exactly where it visually sits
+        const cr = cakeWrap.getBoundingClientRect();
+        const sr = stage.getBoundingClientRect();
+        const left = cr.left - sr.left, top = cr.top - sr.top;
+        stage.appendChild(cakeWrap);
+        cakeWrap.style.position = 'absolute';
+        cakeWrap.style.left = left + 'px';
+        cakeWrap.style.top = top + 'px';
+        cakeWrap.style.margin = '0';
+        cakeWrap.classList.add('landed');
+
+        hitch.style.transition = 'opacity 0.5s ease';
+        hitch.style.opacity = '0';
+        setTimeout(()=>{ hitch.style.display = 'none'; }, 520);
+
+        // brief settle pause, then the car pulls away and exits fully
+        setTimeout(()=>{
+          rig.classList.add('driving');
+          animateX(rig, placeX, exitX, 1750, easeInCubic, ()=>{
+            rig.style.display = 'none';
+            caption.classList.add('show');
+
+            // only once the car is completely gone does "Make a Wish" drop
+            setTimeout(()=>{
+              wishText.classList.add('drop');
+              setTimeout(()=>{
+                showScene('scene-cake');
+                attemptAutoMedia();
+              }, 1650);
+            }, 550);
+          });
+        }, 700);
+      });
+    });
+  });
+}
+
+/* ============================================================
+   SCENE 3 — CANDLES: MIC BLOW DETECTION + CAMERA RECORDING
+   Camera/microphone permission is requested automatically once
+   the "Make a Wish" sequence has fully completed; the button is
+   only shown again if access needs to be retried.
+   ============================================================ */
+let audioCtx, analyser, camStream, mediaRecorder, recordedChunks = [];
+let candlesLit = 3;
+let blowRAF = null;
+let celebrationStarted = false; // guards the tune/recording so they only ever fire once
+const RECORDING_MS = 10500; // matches the length of the synthesized tune
+
+function attemptAutoMedia(){
+  const status = document.getElementById('blow-status');
+  status.textContent = 'Requesting your camera and microphone...';
+  enableMedia();
+}
+
+async function enableMedia(){
+  const status = document.getElementById('blow-status');
+  const btn = document.getElementById('btn-enable-media');
+  btn.style.display = 'none';
+  try{
+    camStream = await navigator.mediaDevices.getUserMedia({ video:{ width:640, height:480 }, audio:true });
+
+    const video = document.getElementById('live-video');
+    video.srcObject = camStream;
+    document.getElementById('camera-frame').classList.add('show');
+
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(camStream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 512;
+    source.connect(analyser);
+
+    status.textContent = 'Camera and microphone are live. Blow toward the screen, nice and steady.';
+    detectBlow();
+  } catch(err){
+    status.textContent = 'Camera or microphone access was not granted. Here is a placeholder moment instead — imagine three candles, gently going out.';
+    btn.textContent = 'Try Camera Again';
+    btn.style.display = 'inline-block';
+    btn.disabled = false;
+    // the song still starts right as the "blowing" begins, even in this fallback
+    setTimeout(()=> startCelebration(), 500);
+    setTimeout(()=> extinguishCandle(1), 900);
+    setTimeout(()=> extinguishCandle(2), 1700);
+    setTimeout(()=> extinguishCandle(3), 2500);
+    setTimeout(()=> allCandlesOut(), 3600);
+  }
+}
+
+function detectBlow(){
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  const meterFill = document.getElementById('meter-fill');
+  const status = document.getElementById('blow-status');
+  let sustained = 0;
+  const BLOW_THRESHOLD = 40;
+
+  function loop(){
+    analyser.getByteFrequencyData(data);
+    let sum = 0;
+    const range = Math.floor(data.length*0.5);
+    for(let i=0;i<range;i++) sum += data[i];
+    const avg = sum/range;
+    meterFill.style.width = Math.min(100, avg*1.6) + '%';
+
+    if(avg > BLOW_THRESHOLD){
+      if(sustained === 0) startCelebration(); // fires the moment blowing begins
+      sustained += 1;
+    } else {
+      sustained = Math.max(0, sustained-1);
+    }
+
+    if(sustained > 18 && candlesLit > 0){
+      sustained = 0;
+      const next = 4 - candlesLit;
+      extinguishCandle(next);
+      candlesLit -= 1;
+      if(candlesLit === 0){ allCandlesOut(); return; }
+    }
+    blowRAF = requestAnimationFrame(loop);
+  }
+  status.textContent = 'Listening for your breath...';
+  blowRAF = requestAnimationFrame(loop);
+}
+
+function extinguishCandle(n){
+  const candle = document.querySelector('#cake-hero [data-candle="'+n+'"]');
+  if(!candle || candle.classList.contains('out')) return;
+  const smoke = document.createElement('span');
+  smoke.className = 'smoke rise';
+  candle.appendChild(smoke);
+  candle.classList.add('out');
+}
+
+// Starts the instrumental and the recording together, the instant blowing
+// is first detected — not once every candle is already out.
+function startCelebration(){
+  if(celebrationStarted) return;
+  celebrationStarted = true;
+  document.getElementById('blow-status').textContent = 'There it is — happy birthday, Suryanshu.';
+  playBirthdayTune();
+  startRecording();
+}
+
+function allCandlesOut(){
+  if(blowRAF) cancelAnimationFrame(blowRAF);
+  document.getElementById('blow-status').textContent = 'All the candles are out. Make a wish.';
+  startCelebration(); // safety net in case blowing wasn't picked up frame-by-frame
+}
+
+/* ---------------------------------------------------------------
+   ORIGINAL, COPYRIGHT-SAFE INSTRUMENTAL PIECE
+   Note: the reference track linked in the brief could not be
+   retrieved for direct listening, so no melody, arrangement or
+   audio from it is reproduced or approximated note-for-note here.
+   This is a fully original composition — a slow, warm chord bed
+   (piano-like triangle/sine tones through a soft delay) with a
+   sparse, drifting melody on top — aiming for the same general
+   "heartfelt, emotional" mood requested. If a closer match to the
+   reference's tempo or instrumentation is wanted, describe it
+   (tempo, instruments, mood) and this can be tuned further.
+   --------------------------------------------------------------- */
+function playBirthdayTune(){
+  const ctx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+  const now = ctx.currentTime + 0.15;
+
+  const master = ctx.createGain();
+  master.gain.value = 0.5;
+  master.connect(ctx.destination);
+
+  const delay = ctx.createDelay();
+  delay.delayTime.value = 0.34;
+  const feedback = ctx.createGain();
+  feedback.gain.value = 0.24;
+  delay.connect(feedback); feedback.connect(delay);
+  delay.connect(master);
+
+  function chordAt(t, freqs, dur){
+    freqs.forEach(f=>{
+      const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = f;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.13, t+0.7);
+      g.gain.linearRampToValueAtTime(0, t+dur);
+      osc.connect(g); g.connect(master); g.connect(delay);
+      osc.start(t); osc.stop(t+dur+0.1);
+    });
+  }
+  function noteAt(t, freq, dur, vol){
+    const osc = ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t+0.06);
+    g.gain.exponentialRampToValueAtTime(0.001, t+dur);
+    osc.connect(g); g.connect(master); g.connect(delay);
+    osc.start(t); osc.stop(t+dur+0.05);
+  }
+
+  const bar = 2.6;
+  chordAt(now + 0*bar, [220.0, 261.6, 329.6, 392.0], bar+0.6); // warm i (Am7-ish)
+  chordAt(now + 1*bar, [174.6, 220.0, 261.6, 349.2], bar+0.6); // iv (F add9-ish)
+  chordAt(now + 2*bar, [196.0, 246.9, 293.7, 392.0], bar+0.6); // v/relative (C-ish)
+  chordAt(now + 3*bar, [196.0, 246.9, 293.7, 440.0], bar+0.9); // gentle resolve (G-ish)
+
+  const melody = [
+    [now+0.4, 659.3, 0.8, 0.09], [now+1.3, 587.3, 0.9, 0.08],
+    [now+2.6, 523.3, 0.9, 0.09], [now+3.6, 440.0, 1.0, 0.08],
+    [now+5.2, 493.9, 0.9, 0.09], [now+6.1, 587.3, 1.0, 0.08],
+    [now+7.6, 659.3, 1.3, 0.10], [now+9.0, 523.3, 1.6, 0.09]
+  ];
+  melody.forEach(([t,f,d,v])=> noteAt(t,f,d,v));
+}
+
+function startRecording(){
+  if(!camStream){ setTimeout(()=> showScene('scene-preview'), RECORDING_MS); return; }
+  recordedChunks = [];
+  const recDot = document.getElementById('rec-dot');
+  let mimeType = 'video/webm;codecs=vp9,opus';
+  if(!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+  if(!MediaRecorder.isTypeSupported(mimeType)) mimeType = '';
+
+  try{
+    mediaRecorder = new MediaRecorder(camStream, mimeType ? { mimeType } : undefined);
+  } catch(e){
+    setTimeout(()=> showScene('scene-preview'), RECORDING_MS);
+    return;
+  }
+  mediaRecorder.ondataavailable = e=>{ if(e.data && e.data.size>0) recordedChunks.push(e.data); };
+  mediaRecorder.onstop = ()=>{
+    recDot.classList.remove('show');
+    const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
+    const url = URL.createObjectURL(blob);
+    document.getElementById('preview-video').src = url;
+    window.__birthdayClip = { blob, url };
+    showScene('scene-preview');
+  };
+  mediaRecorder.start();
+  recDot.classList.add('show');
+  setTimeout(()=>{ if(mediaRecorder.state === 'recording') mediaRecorder.stop(); }, RECORDING_MS);
+}
+
+/* ============================================================
+   SCENE 4 — PREVIEW ACTIONS
+   ============================================================ */
+function showToast(text){
+  const toast = document.getElementById('toast');
+  toast.textContent = text;
+  toast.classList.add('show');
+  setTimeout(()=> toast.classList.remove('show'), 2600);
+}
+function saveToGallery(){
+  // ASSET NOTE: keeps the clip in memory for this session only. Wire this
+  // to a real upload endpoint when the Birthday Gallery has a backend —
+  // this call site won't need to change.
+  if(window.__birthdayClip){
+    window.__birthdayGallery = window.__birthdayGallery || [];
+    window.__birthdayGallery.push(window.__birthdayClip);
+    showToast('Saved to your Birthday Gallery.');
+  } else { showToast('Nothing to save yet.'); }
+}
+function downloadVideo(){
+  if(!window.__birthdayClip){ showToast('No recording available to download.'); return; }
+  const a = document.createElement('a');
+  a.href = window.__birthdayClip.url;
+  const ext = (window.__birthdayClip.blob.type||'').includes('mp4') ? 'mp4' : 'webm';
+  a.download = 'suryanshu-birthday-candles.' + ext;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ============================================================
+   SCENE 5 — CLOTHESLINE GEOMETRY
+   The rope is one continuous sagging line (quadratic bezier)
+   sized to the row's actual rendered width, which is wider than
+   the viewport so the gallery scrolls horizontally. Every clip is
+   placed exactly on the curve, and each photo tucks up under its
+   clip with a snug negative margin (no gap) so it reads as
+   physically pinned rather than floating beside the line. Small
+   randomized spacing, tilt and hang-length keep it from feeling
+   machine-made.
+   ============================================================ */
+function buildClotheslines(){
+  document.querySelectorAll('.clothesline-row').forEach(row=>{
+    const items = Array.from(row.querySelectorAll('.line-photo'));
+    const n = items.length;
+    // give each item roughly 190px of breathing room along the line
+    const width = Math.max(1180, 70 + n*190);
+    row.style.width = width + 'px';
+    const svg = row.querySelector('.rope-svg');
+    const marginX = 46;
+    const x0 = marginX, x1 = width - marginX, y0 = 16, y1 = 16;
+    const sag = Math.max(28, width*0.028) + Math.random()*14;
+    const cx = width/2 + (Math.random()*40-20);
+    const cy = y0 + sag;
+
+    svg.setAttribute('viewBox', '0 0 ' + width + ' 70');
+    svg.innerHTML =
+      '<defs><linearGradient id="ropeGrad'+row.id+'" x1="0" x2="1" y1="0" y2="0">' +
+      '<stop offset="0" stop-color="#6b5c42"/><stop offset="0.5" stop-color="#8d7854"/>' +
+      '<stop offset="1" stop-color="#6b5c42"/></linearGradient></defs>' +
+      '<path d="M'+x0+','+y0+' Q'+cx+','+cy+' '+x1+','+y1+
+      '" stroke="url(#ropeGrad'+row.id+')" stroke-width="2.4" fill="none" stroke-linecap="round"/>';
+
+    function bezier(t){
+      const mt = 1-t;
+      return {
+        x: mt*mt*x0 + 2*mt*t*cx + t*t*x1,
+        y: mt*mt*y0 + 2*mt*t*cy + t*t*y1
+      };
+    }
+
+    items.forEach((el, i)=>{
+      const base = (i+1)/(n+1);
+      const t = Math.min(0.96, Math.max(0.04, base + (Math.random()*0.035 - 0.0175)));
+      const pt = bezier(t);
+      el.style.left = pt.x + 'px';
+      el.style.top = pt.y + 'px';
+
+      const hang = el.querySelector('.photo-hang, .letter-hang');
+      if(hang){
+        // keep this snug (small negative range) so the top edge stays
+        // tucked behind the clip instead of gapping away from the rope
+        const extraDrop = Math.random()*7;
+        hang.style.marginTop = (-14 + extraDrop) + 'px';
+      }
+    });
+
+    row.style.height = (cy + 250) + 'px';
+  });
+}
+let clotheslineResizeTimer = null;
+window.addEventListener('resize', ()=>{
+  clearTimeout(clotheslineResizeTimer);
+  clotheslineResizeTimer = setTimeout(buildClotheslines, 200);
+});
+
+/* ============================================================
+   SCENE 6 — FINAL QUOTES
+   ============================================================ */
+function runFinal(){
+  showScene('scene-final');
+  document.getElementById('end-row').classList.remove('show');
+  const ids = ['quote-1','quote-2','quote-3'];
+  ids.forEach((id,i)=>{
+    setTimeout(()=> document.getElementById(id).classList.add('show'), 900 + i*1500);
+  });
+  const closingDelay = 900 + ids.length*1500 + 900;
+  setTimeout(()=> document.getElementById('closing-msg').classList.add('show'), closingDelay);
+  setTimeout(()=> document.getElementById('end-row').classList.add('show'), closingDelay + 1400);
+}
+
+/* ============================================================
+   WIRE UP
+   ============================================================ */
+document.getElementById('btn-to-drive').addEventListener('click', startDrive);
+document.getElementById('btn-enable-media').addEventListener('click', enableMedia);
+document.getElementById('btn-save-gallery').addEventListener('click', saveToGallery);
+document.getElementById('btn-download-video').addEventListener('click', downloadVideo);
+document.getElementById('btn-to-gallery').addEventListener('click', ()=>{ showScene('scene-gallery'); buildClotheslines(); });
+document.getElementById('btn-to-final').addEventListener('click', runFinal);
+document.getElementById('btn-to-credits').addEventListener('click', ()=> showScene('scene-credits'));
+document.getElementById('btn-replay').addEventListener('click', ()=> { window.location.reload(); });
+
+initBG();
+runLoading();
+
+})();
+</script>
+</body>
+</html>
