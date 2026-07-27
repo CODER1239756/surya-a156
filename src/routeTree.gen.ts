@@ -9,38 +9,115 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SubmitRouteImport } from './routes/submit'
+import { Route as BulletinRouteImport } from './routes/bulletin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminSetupRouteImport } from './routes/admin/setup'
+import { Route as AdminLoginRouteImport } from './routes/admin/login'
 
+const SubmitRoute = SubmitRouteImport.update({
+  id: '/submit',
+  path: '/submit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BulletinRoute = BulletinRouteImport.update({
+  id: '/bulletin',
+  path: '/bulletin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSetupRoute = AdminSetupRouteImport.update({
+  id: '/admin/setup',
+  path: '/admin/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/bulletin': typeof BulletinRoute
+  '/submit': typeof SubmitRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/setup': typeof AdminSetupRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/bulletin': typeof BulletinRoute
+  '/submit': typeof SubmitRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/setup': typeof AdminSetupRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/bulletin': typeof BulletinRoute
+  '/submit': typeof SubmitRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/setup': typeof AdminSetupRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/bulletin'
+    | '/submit'
+    | '/admin/login'
+    | '/admin/setup'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/bulletin' | '/submit' | '/admin/login' | '/admin/setup' | '/admin'
+  id:
+    | '__root__'
+    | '/'
+    | '/bulletin'
+    | '/submit'
+    | '/admin/login'
+    | '/admin/setup'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BulletinRoute: typeof BulletinRoute
+  SubmitRoute: typeof SubmitRoute
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminSetupRoute: typeof AdminSetupRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/submit': {
+      id: '/submit'
+      path: '/submit'
+      fullPath: '/submit'
+      preLoaderRoute: typeof SubmitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bulletin': {
+      id: '/bulletin'
+      path: '/bulletin'
+      fullPath: '/bulletin'
+      preLoaderRoute: typeof BulletinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +125,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/setup': {
+      id: '/admin/setup'
+      path: '/admin/setup'
+      fullPath: '/admin/setup'
+      preLoaderRoute: typeof AdminSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BulletinRoute: BulletinRoute,
+  SubmitRoute: SubmitRoute,
+  AdminLoginRoute: AdminLoginRoute,
+  AdminSetupRoute: AdminSetupRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
