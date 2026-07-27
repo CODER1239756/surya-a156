@@ -81,7 +81,7 @@ export async function submitWish(w: NewWish) {
 }
 
 export async function setWishStatus(id: string, status: WishRow["status"]) {
-  const patch: Record<string, unknown> = { status };
+  const patch: { status: WishRow["status"]; approved_at?: string } = { status };
   if (status === "approved") patch.approved_at = new Date().toISOString();
   const { error } = await supabase.from("wishes").update(patch).eq("id", id);
   if (error) throw new Error(error.message);
