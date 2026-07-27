@@ -1023,7 +1023,7 @@ function runLoading(){
     displayProgress += (targetProgress - displayProgress) * 0.09;
     if(targetProgress >= 100 && displayProgress > 99.4) displayProgress = 100;
 
-    const trackWidth = trackWrap.clientWidth - 34;
+    const trackWidth = trackWrap.clientWidth - 56;
     catPos.style.transform = 'translateX(' + (trackWidth * displayProgress/100) + 'px)';
     fill.style.width = displayProgress + '%';
     pct.textContent = Math.round(displayProgress) + '%';
