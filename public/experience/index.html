@@ -96,22 +96,25 @@ a{ color:inherit; }
   padding-top:34px;
 }
 .cat-pos{
-  position:absolute; top:-8px; left:0;
-  width:34px; height:34px;
+  position:absolute; top:-30px; left:0;
+  width:56px; height:30px;
   will-change:transform;
+  transform:translateX(0);
 }
 .cat-run{
-  display:block; width:34px; height:34px;
-  transform-origin:50% 90%;
-  animation:catGallop 0.46s cubic-bezier(.42,0,.58,1) infinite;
-  filter:drop-shadow(0 4px 5px rgba(0,0,0,0.5));
+  display:block; width:56px; height:30px;
+  /* 12-frame sprite strip: total width = 12 * frameWidth. We scale strip so each frame renders at 56px wide. */
+  background-image:url('/__l5e/assets-v1/2d16c987-d352-4599-8d02-323eb354e49c/cat-run-strip.png');
+  background-repeat:no-repeat;
+  background-size:672px 30px; /* 12 frames * 56px */
+  background-position:0 0;
+  animation:catRunSprite 0.85s steps(12) infinite;
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,0.55));
+  image-rendering:auto;
 }
-@keyframes catGallop{
-  0%   { transform:translateY(0)    scale(1,1)     rotate(-2deg); }
-  30%  { transform:translateY(-4.5px) scale(0.93,1.08) rotate(3deg); }
-  55%  { transform:translateY(-1px) scale(1.06,0.95) rotate(-1deg); }
-  80%  { transform:translateY(-3px) scale(0.97,1.05) rotate(2deg); }
-  100% { transform:translateY(0)    scale(1,1)     rotate(-2deg); }
+@keyframes catRunSprite{
+  from { background-position:0 0; }
+  to   { background-position:-672px 0; }
 }
 .loading-track{
   width:100%; height:3px; border-radius:3px;
@@ -522,19 +525,8 @@ main#app{ position:relative; z-index:1; }
 <div id="loading-screen" role="status" aria-live="polite">
   <div class="loading-mark">Suryanshu<span>.</span> Turns Sixteen</div>
   <div class="loading-track-wrap">
-    <div class="cat-pos" id="cat-pos">
-      <svg class="cat-run" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <ellipse cx="32" cy="46" rx="20" ry="4" fill="black" opacity="0.25"/>
-        <path d="M14 40 Q18 22 34 22 Q50 22 48 40 Q46 44 40 44 L20 44 Q16 44 14 40Z" fill="#e8a33d"/>
-        <path d="M20 22 L16 12 L24 20Z" fill="#e8a33d"/>
-        <path d="M40 22 L46 12 L38 20Z" fill="#e8a33d"/>
-        <circle cx="26" cy="30" r="1.6" fill="#1a1305"/>
-        <circle cx="38" cy="30" r="1.6" fill="#1a1305"/>
-        <path d="M30 34 Q32 36 34 34" stroke="#1a1305" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-        <path d="M46 34 Q56 30 60 36" stroke="#e8a33d" stroke-width="3" fill="none" stroke-linecap="round"/>
-        <ellipse cx="21" cy="44" rx="3" ry="4" fill="#c9812c"/>
-        <ellipse cx="43" cy="44" rx="3" ry="4" fill="#c9812c"/>
-      </svg>
+    <div class="cat-pos" id="cat-pos" aria-hidden="true">
+      <div class="cat-run"></div>
     </div>
     <div class="loading-track"><div class="loading-fill" id="loading-fill"></div></div>
     <div class="loading-percent" id="loading-percent">0%</div>
@@ -906,7 +898,10 @@ main#app{ position:relative; z-index:1; }
       <p class="credits-desc">Surya's girl best friend, who helped pull these memories together for him. Wishing you a very happy birthday, Suryanshu.</p>
     </div>
 
-    <button class="credits-replay" id="btn-replay">Watch it all again</button>
+    <div class="credits-cta-row" style="display:flex;flex-direction:column;gap:0.9rem;align-items:center;margin-top:1.4rem;">
+      <a class="btn btn-primary" href="/bulletin" style="text-decoration:none;">Wish Well Bulletin Board</a>
+      <button class="credits-replay" id="btn-replay" type="button">Watch it all again</button>
+    </div>
   </section>
 
 </main>
@@ -1484,7 +1479,7 @@ document.getElementById('btn-download-video').addEventListener('click', download
 document.getElementById('btn-to-gallery').addEventListener('click', ()=>{ showScene('scene-gallery'); buildClotheslines(); });
 document.getElementById('btn-to-final').addEventListener('click', runFinal);
 document.getElementById('btn-to-credits').addEventListener('click', ()=> showScene('scene-credits'));
-document.getElementById('btn-replay').addEventListener('click', ()=> showScene('scene-reveal'));
+document.getElementById('btn-replay').addEventListener('click', ()=> { window.location.reload(); });
 
 initBG();
 runLoading();
