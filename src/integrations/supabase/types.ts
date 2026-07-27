@@ -14,16 +14,97 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wishes: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          id: string
+          note_image_url: string
+          paper_tint: string | null
+          pin_color: string | null
+          profile_image_url: string | null
+          rotation: number | null
+          sender_name: string
+          status: Database["public"]["Enums"]["wish_status"]
+          submitted_by: string | null
+          submitted_ip: string | null
+          transcription: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          note_image_url: string
+          paper_tint?: string | null
+          pin_color?: string | null
+          profile_image_url?: string | null
+          rotation?: number | null
+          sender_name: string
+          status?: Database["public"]["Enums"]["wish_status"]
+          submitted_by?: string | null
+          submitted_ip?: string | null
+          transcription?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          note_image_url?: string
+          paper_tint?: string | null
+          pin_color?: string | null
+          profile_image_url?: string | null
+          rotation?: number | null
+          sender_name?: string
+          status?: Database["public"]["Enums"]["wish_status"]
+          submitted_by?: string | null
+          submitted_ip?: string | null
+          transcription?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      wish_status: "pending" | "approved" | "rejected" | "hidden"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +231,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      wish_status: ["pending", "approved", "rejected", "hidden"],
+    },
   },
 } as const
