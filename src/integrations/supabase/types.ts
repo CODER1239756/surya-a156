@@ -41,7 +41,7 @@ export type Database = {
           approved_by: string | null
           created_at: string
           id: string
-          note_image_url: string
+          note_image_url: string | null
           paper_tint: string | null
           pin_color: string | null
           profile_image_url: string | null
@@ -58,7 +58,7 @@ export type Database = {
           approved_by?: string | null
           created_at?: string
           id?: string
-          note_image_url: string
+          note_image_url?: string | null
           paper_tint?: string | null
           pin_color?: string | null
           profile_image_url?: string | null
@@ -75,7 +75,7 @@ export type Database = {
           approved_by?: string | null
           created_at?: string
           id?: string
-          note_image_url?: string
+          note_image_url?: string | null
           paper_tint?: string | null
           pin_color?: string | null
           profile_image_url?: string | null
