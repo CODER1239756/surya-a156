@@ -1,6 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { fetchApprovedWishes, signedWishImageUrl, type WishRow } from "@/lib/wishes";
+import { useAdminShortcut } from "@/lib/use-admin-shortcut";
+
+const CORK_TEXTURE = "/__l5e/assets-v1/f1f631ab-0203-448f-8fa1-89d8b34a97b7/cork-board.jpg";
+const HEADING_FONT = "'Orbitron', 'Trebuchet MS', sans-serif";
 
 export const Route = createFileRoute("/bulletin")({
   head: () => ({
@@ -31,6 +35,7 @@ function paperBg(tint: string | null) {
 }
 
 function BulletinPage() {
+  useAdminShortcut();
   const [wishes, setWishes] = useState<PreparedWish[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -56,54 +61,55 @@ function BulletinPage() {
     <div
       style={{
         minHeight: "100vh",
-        // organic cork background
-        background:
-          "radial-gradient(ellipse at top, #b98858 0%, #8f5f34 55%, #6a4321 100%)",
+        backgroundColor: "#7a5228",
+        backgroundImage: `url(${CORK_TEXTURE})`,
+        backgroundSize: "1100px auto",
+        backgroundRepeat: "repeat",
+        backgroundPosition: "center top",
+        backgroundAttachment: "fixed",
         padding: "40px 20px 80px",
         fontFamily: "Georgia, 'Times New Roman', serif",
         color: "#3b2413",
+        borderTop: "14px solid #5b3a1c",
+        borderBottom: "14px solid #5b3a1c",
+        boxShadow: "inset 0 0 90px rgba(0,0,0,.55)",
       }}
     >
-      {/* subtle cork noise overlay */}
+      {/* soft vignette so the cork reads as a real, lit board */}
       <div
         aria-hidden
         style={{
           position: "fixed",
           inset: 0,
           pointerEvents: "none",
-          backgroundImage:
-            "radial-gradient(circle at 20% 30%, rgba(0,0,0,.18) 0 2px, transparent 3px), radial-gradient(circle at 70% 60%, rgba(0,0,0,.14) 0 2px, transparent 3px), radial-gradient(circle at 40% 80%, rgba(255,255,255,.06) 0 1px, transparent 2px)",
-          backgroundSize: "180px 180px, 240px 240px, 120px 120px",
-          mixBlendMode: "multiply",
-          opacity: 0.9,
+          background:
+            "radial-gradient(ellipse at 50% 20%, rgba(255,232,190,.10) 0%, rgba(0,0,0,.18) 45%, rgba(0,0,0,.55) 100%)",
         }}
       />
+
 
       <header style={{ maxWidth: 1100, margin: "0 auto 32px", position: "relative", zIndex: 1 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
           <div>
             <h1
               style={{
-                fontFamily: "'Brush Script MT', 'Segoe Script', cursive",
-                fontSize: "clamp(2.4rem, 5vw, 3.8rem)",
+                fontFamily: HEADING_FONT,
+                fontWeight: 800,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                fontSize: "clamp(1.5rem, 3.6vw, 2.6rem)",
                 margin: 0,
                 color: "#fff4dc",
-                textShadow: "2px 3px 0 rgba(0,0,0,.35)",
+                textShadow: "2px 3px 0 rgba(0,0,0,.45)",
               }}
             >
               The Wish Well Bulletin Board
             </h1>
-            <p style={{ color: "#f2e2c1", marginTop: 6, fontStyle: "italic" }}>
+            <p style={{ color: "#f7e9cd", marginTop: 8, fontStyle: "italic", textShadow: "1px 1px 2px rgba(0,0,0,.5)" }}>
               Sixteen years of Suryanshu — pinned by friends and family.
             </p>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <Link
-              to="/submit"
-              style={pinBtn("#f4c542", "#3b2413")}
-            >
-              ✎ Pin a wish
-            </Link>
             <a href="/experience/index.html" style={pinBtn("#fff4dc", "#3b2413")}>
               ← Back to experience
             </a>
@@ -111,12 +117,13 @@ function BulletinPage() {
         </div>
       </header>
 
+
       <main style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 1 }}>
         {err && <p style={{ color: "#ffdede", textAlign: "center" }}>{err}</p>}
         {!wishes && !err && <p style={{ color: "#f2e2c1", textAlign: "center" }}>Unpinning wishes…</p>}
         {wishes && wishes.length === 0 && (
           <p style={{ color: "#f2e2c1", textAlign: "center", fontStyle: "italic" }}>
-            The board is empty. Be the first to pin a wish.
+            The board is empty for now — approved wishes will appear here.
           </p>
         )}
 
