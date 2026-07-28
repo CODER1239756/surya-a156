@@ -1470,7 +1470,7 @@ function buildClotheslines(){
 
     items.forEach((el, i)=>{
       const base = (i+1)/(n+1);
-      const t = Math.min(0.96, Math.max(0.04, base + (Math.random()*0.035 - 0.0175)));
+      const t = Math.min(0.96, Math.max(0.04, base + (Math.random()*0.008 - 0.004)));
       const pt = bezier(t);
       el.style.left = pt.x + 'px';
       el.style.top = pt.y + 'px';
