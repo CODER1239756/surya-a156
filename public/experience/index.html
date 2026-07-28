@@ -93,28 +93,27 @@ a{ color:inherit; }
 .loading-track-wrap{
   width:min(420px, 78vw);
   position:relative;
-  padding-top:34px;
+  padding-top:54px;
 }
 .cat-pos{
-  position:absolute; top:-30px; left:0;
-  width:56px; height:30px;
+  position:absolute; top:-42px; left:0;
+  width:72px; height:38px;
   will-change:transform;
   transform:translateX(0);
 }
 .cat-run{
-  display:block; width:56px; height:30px;
-  /* 12-frame sprite strip: total width = 12 * frameWidth. We scale strip so each frame renders at 56px wide. */
-  background-image:url('/__l5e/assets-v1/2d16c987-d352-4599-8d02-323eb354e49c/cat-run-strip.png');
+  display:block; width:72px; height:38px;
+  background-image:url('/__l5e/assets-v1/3a32ec4a-a406-4a62-b0b8-d19ed5c8d9ca/cat-run.png');
   background-repeat:no-repeat;
-  background-size:672px 30px; /* 12 frames * 56px */
-  background-position:0 0;
-  animation:catRunSprite 0.85s steps(12) infinite;
-  filter:drop-shadow(0 3px 4px rgba(0,0,0,0.55));
-  image-rendering:auto;
+  background-size:contain;
+  background-position:center bottom;
+  animation:catTrot 0.5s ease-in-out infinite;
+  transform-origin:50% 100%;
+  filter:drop-shadow(0 4px 5px rgba(0,0,0,0.55));
 }
-@keyframes catRunSprite{
-  from { background-position:0 0; }
-  to   { background-position:-672px 0; }
+@keyframes catTrot{
+  0%,100% { transform:translateY(0) rotate(-1.2deg) scaleY(1); }
+  50%     { transform:translateY(-3px) rotate(1.2deg) scaleY(1.03); }
 }
 .loading-track{
   width:100%; height:3px; border-radius:3px;
@@ -419,7 +418,7 @@ main#app{ position:relative; z-index:1; }
 }
 .photo-hang{
   margin-top:-13px;
-  width:150px; padding:12px 12px 30px; background:#f4efe4;
+  width:176px; padding:12px 12px 10px; background:#f6f1e6;
   border-radius:2px;
   box-shadow:0 14px 24px -10px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.4) inset,
     0 -3px 4px -2px rgba(0,0,0,0.28);
@@ -439,7 +438,15 @@ main#app{ position:relative; z-index:1; }
   display:flex; align-items:center; justify-content:center;
   color:var(--muted); font-size:0.7rem; letter-spacing:0.03em; text-align:center; padding:0.75rem;
 }
-.photo-caption{ position:absolute; bottom:9px; left:0; right:0; text-align:center; font-family:var(--hand); font-size:0.98rem; color:#3a3226; }
+.photo-caption{
+  position:static;
+  margin-top:0.55rem;
+  text-align:center;
+  font-family:var(--hand);
+  font-size:1.05rem; line-height:1.25;
+  color:#2b241a;
+  word-break:break-word;
+}
 
 .letter-hang{
   margin-top:-13px; width:210px; padding:20px 18px 26px;
@@ -1023,7 +1030,7 @@ function runLoading(){
     displayProgress += (targetProgress - displayProgress) * 0.09;
     if(targetProgress >= 100 && displayProgress > 99.4) displayProgress = 100;
 
-    const trackWidth = trackWrap.clientWidth - 56;
+    const trackWidth = trackWrap.clientWidth - 72;
     catPos.style.transform = 'translateX(' + (trackWidth * displayProgress/100) + 'px)';
     fill.style.width = displayProgress + '%';
     pct.textContent = Math.round(displayProgress) + '%';
@@ -1270,66 +1277,98 @@ function allCandlesOut(){
 }
 
 /* ---------------------------------------------------------------
-   ORIGINAL, COPYRIGHT-SAFE INSTRUMENTAL PIECE
-   Note: the reference track linked in the brief could not be
-   retrieved for direct listening, so no melody, arrangement or
-   audio from it is reproduced or approximated note-for-note here.
-   This is a fully original composition — a slow, warm chord bed
-   (piano-like triangle/sine tones through a soft delay) with a
-   sparse, drifting melody on top — aiming for the same general
-   "heartfelt, emotional" mood requested. If a closer match to the
-   reference's tempo or instrumentation is wanted, describe it
-   (tempo, instruments, mood) and this can be tuned further.
+   "HAPPY BIRTHDAY TO YOU" — the melody entered the public domain in
+   2016 (Warner/Chappell's claim was invalidated in 2015 and the song
+   was formally released to the public domain in 2016), so performing
+   it here is copyright-safe. Nothing is sampled: the accompaniment is
+   synthesised with the Web Audio API and the lyrics are "sung" by the
+   browser's own speech synthesis voice, one word per note.
    --------------------------------------------------------------- */
 function playBirthdayTune(){
   const ctx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-  const now = ctx.currentTime + 0.15;
+  if(ctx.state === 'suspended') ctx.resume();
+  const now = ctx.currentTime + 0.35;
 
   const master = ctx.createGain();
-  master.gain.value = 0.5;
+  master.gain.value = 0.42;
   master.connect(ctx.destination);
 
   const delay = ctx.createDelay();
-  delay.delayTime.value = 0.34;
+  delay.delayTime.value = 0.3;
   const feedback = ctx.createGain();
-  feedback.gain.value = 0.24;
+  feedback.gain.value = 0.18;
   delay.connect(feedback); feedback.connect(delay);
-  delay.connect(master);
+  const delayMix = ctx.createGain(); delayMix.gain.value = 0.35;
+  delay.connect(delayMix); delayMix.connect(master);
 
+  const N = { G3:196.00, C4:261.63, D4:293.66, E4:329.63, F4:349.23, G4:392.00,
+              A4:440.00, Bb4:466.16, B4:493.88, C5:523.25, D5:587.33, E5:659.25, F5:698.46 };
+
+  // beat = quarter note; the tune is in 3/4 with a pickup
+  const beat = 0.52;
+  // [note, beats, lyric]
+  const song = [
+    [N.C4,0.75,'Hap'], [N.C4,0.25,'py'], [N.D4,1,'birth'], [N.C4,1,'day'], [N.F4,1,'to'], [N.E4,2,'you'],
+    [N.C4,0.75,'Hap'], [N.C4,0.25,'py'], [N.D4,1,'birth'], [N.C4,1,'day'], [N.G4,1,'to'], [N.F4,2,'you'],
+    [N.C4,0.75,'Hap'], [N.C4,0.25,'py'], [N.C5,1,'birth'], [N.A4,1,'day'], [N.F4,1,'dear'], [N.E4,1,'Sur'], [N.D4,2,'yanshu'],
+    [N.Bb4,0.75,'Hap'], [N.Bb4,0.25,'py'], [N.A4,1,'birth'], [N.F4,1,'day'], [N.G4,1,'to'], [N.F4,3,'you']
+  ];
+
+  function noteAt(t, freq, dur, vol, type){
+    [type||'triangle','sine'].forEach((w,i)=>{
+      const osc = ctx.createOscillator(); osc.type = w;
+      osc.frequency.setValueAtTime(freq*(i?2:1), t);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(i? vol*0.22 : vol, t+0.05);
+      g.gain.exponentialRampToValueAtTime(0.0008, t+dur);
+      osc.connect(g); g.connect(master); g.connect(delay);
+      osc.start(t); osc.stop(t+dur+0.05);
+    });
+  }
   function chordAt(t, freqs, dur){
     freqs.forEach(f=>{
       const osc = ctx.createOscillator(); osc.type = 'sine'; osc.frequency.value = f;
       const g = ctx.createGain();
       g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.13, t+0.7);
+      g.gain.linearRampToValueAtTime(0.075, t+0.35);
       g.gain.linearRampToValueAtTime(0, t+dur);
       osc.connect(g); g.connect(master); g.connect(delay);
       osc.start(t); osc.stop(t+dur+0.1);
     });
   }
-  function noteAt(t, freq, dur, vol){
-    const osc = ctx.createOscillator(); osc.type = 'triangle'; osc.frequency.value = freq;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(vol, t+0.06);
-    g.gain.exponentialRampToValueAtTime(0.001, t+dur);
-    osc.connect(g); g.connect(master); g.connect(delay);
-    osc.start(t); osc.stop(t+dur+0.05);
-  }
 
-  const bar = 2.6;
-  chordAt(now + 0*bar, [220.0, 261.6, 329.6, 392.0], bar+0.6); // warm i (Am7-ish)
-  chordAt(now + 1*bar, [174.6, 220.0, 261.6, 349.2], bar+0.6); // iv (F add9-ish)
-  chordAt(now + 2*bar, [196.0, 246.9, 293.7, 392.0], bar+0.6); // v/relative (C-ish)
-  chordAt(now + 3*bar, [196.0, 246.9, 293.7, 440.0], bar+0.9); // gentle resolve (G-ish)
+  // warm chord bed under the melody: F  C  F  Bb/F  C  F
+  const bars = 3*beat;
+  [[N.F4/2,N.A4/2,N.C4],[N.C4,N.E4,N.G4],[N.F4/2,N.A4/2,N.C4],
+   [N.F4/2,N.Bb4/2,N.D4],[N.C4,N.E4,N.G4],[N.F4/2,N.A4/2,N.C4]].forEach((c,i)=>{
+    chordAt(now + i*2*bars, c, 2*bars);
+  });
 
-  const melody = [
-    [now+0.4, 659.3, 0.8, 0.09], [now+1.3, 587.3, 0.9, 0.08],
-    [now+2.6, 523.3, 0.9, 0.09], [now+3.6, 440.0, 1.0, 0.08],
-    [now+5.2, 493.9, 0.9, 0.09], [now+6.1, 587.3, 1.0, 0.08],
-    [now+7.6, 659.3, 1.3, 0.10], [now+9.0, 523.3, 1.6, 0.09]
-  ];
-  melody.forEach(([t,f,d,v])=> noteAt(t,f,d,v));
+  // melody + sung lyrics
+  const synth = window.speechSynthesis;
+  const canSing = !!synth && typeof SpeechSynthesisUtterance !== 'undefined';
+  if(canSing){ try{ synth.cancel(); }catch(e){} }
+
+  let t = now;
+  song.forEach(([f, b, word])=>{
+    const dur = b*beat;
+    noteAt(t, f, dur*0.94, 0.16);
+    if(canSing){
+      const delayMs = Math.max(0, (t - ctx.currentTime) * 1000);
+      setTimeout(()=>{
+        try{
+          const u = new SpeechSynthesisUtterance(word);
+          // map the note onto the voice so it tracks the melody line
+          u.pitch = Math.max(0.1, Math.min(2, (Math.log2(f/N.C4) * 1.1) + 1.0));
+          u.rate = Math.max(0.5, Math.min(1.6, 0.62 / Math.max(0.35, dur)));
+          u.volume = 1;
+          synth.speak(u);
+        }catch(e){}
+      }, delayMs);
+    }
+    t += dur;
+  });
 }
 
 function startRecording(){
@@ -1403,11 +1442,11 @@ function buildClotheslines(){
   document.querySelectorAll('.clothesline-row').forEach(row=>{
     const items = Array.from(row.querySelectorAll('.line-photo'));
     const n = items.length;
-    // give each item roughly 190px of breathing room along the line
-    const width = Math.max(1180, 70 + n*190);
+    // give each item generous breathing room along the line
+    const width = Math.max(1180, 90 + n*268);
     row.style.width = width + 'px';
     const svg = row.querySelector('.rope-svg');
-    const marginX = 46;
+    const marginX = 120;
     const x0 = marginX, x1 = width - marginX, y0 = 16, y1 = 16;
     const sag = Math.max(28, width*0.028) + Math.random()*14;
     const cx = width/2 + (Math.random()*40-20);
@@ -1445,7 +1484,7 @@ function buildClotheslines(){
       }
     });
 
-    row.style.height = (cy + 250) + 'px';
+    row.style.height = (cy + 320) + 'px';
   });
 }
 let clotheslineResizeTimer = null;

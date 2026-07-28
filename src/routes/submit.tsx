@@ -1,14 +1,22 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useRef, useState } from "react";
 import { submitWish, uploadWishFile } from "@/lib/wishes";
+import { useAdminShortcut } from "@/lib/use-admin-shortcut";
 
 export const Route = createFileRoute("/submit")({
   head: () => ({
     meta: [
-      { title: "Pin a Birthday Wish — Suryanshu Turns 16" },
-      { name: "description", content: "Send a handwritten (or typed) birthday wish for Suryanshu's sixteenth. Notes appear on the Wish Well bulletin board after moderation." },
-      { property: "og:title", content: "Pin a Birthday Wish" },
-      { property: "og:description", content: "Send a birthday wish for Suryanshu's sixteenth." },
+      { title: "Send Suryanshu a Wish — Wish Well Bulletin Board" },
+      {
+        name: "description",
+        content:
+          "Write Suryanshu a birthday note, snap a photo of it, and it goes up on the Wish Well bulletin board once it's reviewed.",
+      },
+      { property: "og:title", content: "Send Suryanshu a Wish" },
+      {
+        property: "og:description",
+        content: "Write him a note, snap a photo of it, and it'll go up on the board once it's reviewed.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -16,158 +24,242 @@ export const Route = createFileRoute("/submit")({
   component: SubmitPage,
 });
 
+const CREAM = "#f3eee4";
+const MUTED = "#9aa1ac";
+const PANEL = "rgba(255,255,255,0.035)";
+const LINE = "rgba(255,255,255,0.09)";
+const AMBER = "#e8a33d";
+const AMBER_SOFT = "#f3c877";
+
+function UploadBox({
+  label,
+  required,
+  hint,
+  onFile,
+}: {
+  label: string;
+  required?: boolean;
+  hint: string;
+  onFile: (f: File | null) => void;
+}) {
+  const [preview, setPreview] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div style={{ marginBottom: "1.4rem" }}>
+      <label style={{ display: "block", fontSize: "0.82rem", color: MUTED, marginBottom: "0.4rem" }}>
+        {label}
+      </label>
+      <div
+        style={{
+          border: `1.5px dashed ${LINE}`,
+          borderRadius: 14,
+          padding: "1.4rem",
+          textAlign: "center",
+          cursor: "pointer",
+          position: "relative",
+        }}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          required={required}
+          onChange={(e) => {
+            const file = e.target.files?.[0] ?? null;
+            onFile(file);
+            if (!file) return setPreview(null);
+            const reader = new FileReader();
+            reader.onload = (ev) => setPreview(String(ev.target?.result ?? ""));
+            reader.readAsDataURL(file);
+          }}
+          style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer", width: "100%", height: "100%" }}
+        />
+        <div style={{ color: MUTED, fontSize: "0.85rem" }}>{hint}</div>
+      </div>
+      {preview && (
+        <div style={{ marginTop: "0.9rem" }}>
+          <img
+            src={preview}
+            alt="Upload preview"
+            style={{ maxWidth: "100%", maxHeight: 220, borderRadius: 8, display: "block", margin: "0 auto" }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SubmitPage() {
-  const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [note, setNote] = useState("");
+  useAdminShortcut();
+  const [senderName, setSenderName] = useState("");
+  const [transcription, setTranscription] = useState("");
   const [noteFile, setNoteFile] = useState<File | null>(null);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [profileFile, setProfileFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setErr(null);
-    if (!name.trim()) return setErr("Please share your name.");
-    if (!note.trim() && !noteFile) return setErr("Add a typed message or upload a handwritten note.");
+    setStatus(null);
+    if (!noteFile) {
+      setStatus("Please attach a photo of your handwritten note.");
+      return;
+    }
     setBusy(true);
     try {
-      let notePath: string | undefined;
-      let avatarPath: string | undefined;
-      if (noteFile) notePath = await uploadWishFile(noteFile, "notes");
-      if (avatarFile) avatarPath = await uploadWishFile(avatarFile, "avatars");
+      const notePath = await uploadWishFile(noteFile, "notes");
+      const avatarPath = profileFile ? await uploadWishFile(profileFile, "avatars") : undefined;
       await submitWish({
-        senderName: name,
-        transcription: note || undefined,
+        senderName: senderName.trim() || "Anonymous",
+        transcription: transcription.trim() || undefined,
         noteImagePath: notePath,
         profileImagePath: avatarPath,
       });
-      setOk(true);
-      setTimeout(() => navigate({ to: "/bulletin" }), 2200);
-    } catch (e2) {
-      setErr(e2 instanceof Error ? e2.message : "Something went wrong");
+      setSent(true);
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : "Could not send your wish. Please try again.");
     } finally {
       setBusy(false);
     }
   }
 
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    background: PANEL,
+    border: `1px solid ${LINE}`,
+    color: CREAM,
+    padding: "0.8rem 1rem",
+    borderRadius: 10,
+    fontFamily: "inherit",
+    fontSize: "0.95rem",
+    boxSizing: "border-box",
+  };
+
   return (
     <div
       style={{
+        background: "radial-gradient(ellipse at 50% 20%, #121828 0%, #080b12 70%)",
+        color: CREAM,
+        fontFamily: "'Inter', sans-serif",
         minHeight: "100vh",
-        background: "radial-gradient(ellipse at top, #b98858 0%, #8f5f34 55%, #6a4321 100%)",
-        padding: "40px 20px",
-        fontFamily: "Georgia, serif",
-        color: "#3b2413",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "6vh 6vw",
       }}
     >
-      <div style={{ maxWidth: 640, margin: "0 auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <h1
-            style={{
-              fontFamily: "'Brush Script MT', 'Segoe Script', cursive",
-              fontSize: "2.6rem",
-              color: "#fff4dc",
-              margin: 0,
-              textShadow: "2px 3px 0 rgba(0,0,0,.35)",
-            }}
-          >
-            Pin a wish
-          </h1>
-          <Link to="/bulletin" style={{ color: "#fff4dc", textDecoration: "underline" }}>
-            ← Board
-          </Link>
-        </div>
-
-        {ok ? (
-          <div style={notePanel}>
-            <h2 style={{ marginTop: 0 }}>Your wish is on its way. 🎈</h2>
-            <p>
-              Thanks for adding to Suryanshu's board! It will appear once it's been given a quick look-over.
-              Redirecting you to the board…
+      <div style={{ width: "100%", maxWidth: 520 }}>
+        {sent ? (
+          <div style={{ textAlign: "center" }}>
+            <h1 style={{ fontFamily: "'Fraunces', Georgia, serif", fontWeight: 500, fontSize: "2.1rem", marginBottom: "1rem" }}>
+              Sent.
+            </h1>
+            <p style={{ color: MUTED }}>
+              Thank you — your wish is waiting for a quick review, and then it'll be pinned up on the board.
+            </p>
+            <p style={{ marginTop: "1.6rem" }}>
+              <a href="/bulletin" style={{ color: AMBER_SOFT }}>
+                View the board →
+              </a>
             </p>
           </div>
         ) : (
-          <form onSubmit={onSubmit} style={notePanel}>
-            <label style={label}>Your name</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={100}
-              required
-              style={input}
-              placeholder="e.g. Nani, Drish, Mom"
-            />
-
-            <label style={label}>Your wish (typed)</label>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              maxLength={1000}
-              rows={5}
-              style={{ ...input, resize: "vertical", fontFamily: "'Caveat', 'Segoe Script', cursive", fontSize: "1.25rem" }}
-              placeholder="Happy 16th, Suryanshu…"
-            />
-
-            <label style={label}>Or upload a handwritten note (photo)</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setNoteFile(e.target.files?.[0] ?? null)}
-              style={{ marginBottom: 12 }}
-            />
-
-            <label style={label}>Profile picture (optional)</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
-              style={{ marginBottom: 12 }}
-            />
-
-            {err && <p style={{ color: "#a01a1a", background: "#ffd7d7", padding: 10, borderRadius: 4 }}>{err}</p>}
-
-            <button type="submit" disabled={busy} style={submitBtn}>
-              {busy ? "Pinning…" : "Pin to the board"}
-            </button>
-
-            <p style={{ fontSize: 12, color: "#5c3a1e", marginTop: 14 }}>
-              Wishes are reviewed before appearing on the public board.
+          <>
+            <div
+              style={{
+                fontSize: "0.72rem",
+                letterSpacing: "0.28em",
+                textTransform: "uppercase",
+                color: AMBER_SOFT,
+                marginBottom: "0.8rem",
+                textAlign: "center",
+              }}
+            >
+              Wish Well Bulletin Board
+            </div>
+            <h1
+              style={{
+                fontFamily: "'Fraunces', Georgia, serif",
+                fontWeight: 500,
+                fontSize: "clamp(1.7rem,4vw,2.3rem)",
+                textAlign: "center",
+                marginBottom: "0.6rem",
+              }}
+            >
+              Send Suryanshu a Wish
+            </h1>
+            <p style={{ textAlign: "center", color: MUTED, fontSize: "0.95rem", marginBottom: "2.2rem" }}>
+              Write him a note, snap a photo of it, and it'll go up on the board once it's reviewed.
             </p>
-          </form>
+
+            <form onSubmit={onSubmit}>
+              <div style={{ marginBottom: "1.4rem" }}>
+                <label htmlFor="senderName" style={{ display: "block", fontSize: "0.82rem", color: MUTED, marginBottom: "0.4rem" }}>
+                  Your name (optional)
+                </label>
+                <input
+                  id="senderName"
+                  type="text"
+                  maxLength={120}
+                  placeholder="e.g. Devina"
+                  value={senderName}
+                  onChange={(e) => setSenderName(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+
+              <UploadBox label="Your photo (optional)" hint="Tap to add a small profile picture" onFile={setProfileFile} />
+              <UploadBox
+                label="Your handwritten note — a photo of it (required)"
+                hint="Tap to upload a photo of your note"
+                required
+                onFile={setNoteFile}
+              />
+
+              <div style={{ marginBottom: "1.4rem" }}>
+                <label htmlFor="transcription" style={{ display: "block", fontSize: "0.82rem", color: MUTED, marginBottom: "0.4rem" }}>
+                  Typed version (optional, in case your handwriting is a little too creative)
+                </label>
+                <textarea
+                  id="transcription"
+                  maxLength={2000}
+                  placeholder="Happy birthday, Suryanshu!"
+                  value={transcription}
+                  onChange={(e) => setTranscription(e.target.value)}
+                  style={{ ...inputStyle, minHeight: 100, resize: "vertical" }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={busy}
+                style={{
+                  appearance: "none",
+                  border: "none",
+                  width: "100%",
+                  padding: "1rem",
+                  borderRadius: 999,
+                  background: `linear-gradient(160deg, ${AMBER_SOFT}, ${AMBER})`,
+                  color: "#1a1305",
+                  fontWeight: 600,
+                  fontSize: "0.98rem",
+                  letterSpacing: "0.03em",
+                  cursor: busy ? "not-allowed" : "pointer",
+                  opacity: busy ? 0.5 : 1,
+                }}
+              >
+                {busy ? "Sending…" : "Send the Wish"}
+              </button>
+
+              <div style={{ textAlign: "center", marginTop: "1rem", fontSize: "0.88rem", minHeight: "1.4em", color: status ? "#e08a7d" : MUTED }}>
+                {status}
+              </div>
+            </form>
+          </>
         )}
       </div>
     </div>
   );
 }
-
-const notePanel: React.CSSProperties = {
-  background: "#f7ecd0",
-  padding: 28,
-  borderRadius: 4,
-  boxShadow: "3px 6px 14px rgba(0,0,0,.35)",
-};
-const label: React.CSSProperties = { display: "block", fontWeight: 600, margin: "10px 0 6px" };
-const input: React.CSSProperties = {
-  width: "100%",
-  padding: "10px 12px",
-  borderRadius: 4,
-  border: "1px solid rgba(0,0,0,.2)",
-  background: "#fffaf0",
-  fontSize: "1rem",
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-};
-const submitBtn: React.CSSProperties = {
-  background: "#e94f4f",
-  color: "#fff4dc",
-  padding: "12px 22px",
-  border: "none",
-  borderRadius: 4,
-  fontSize: "1.05rem",
-  fontWeight: 600,
-  cursor: "pointer",
-  boxShadow: "2px 3px 0 rgba(0,0,0,.35)",
-  fontFamily: "Georgia, serif",
-};
