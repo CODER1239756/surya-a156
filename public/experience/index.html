@@ -101,28 +101,56 @@ a{ color:inherit; }
 .loading-track-wrap{
   width:min(420px, 78vw);
   position:relative;
-  padding-top:54px;
+  padding-top:100px;
 }
+/* cat walks a comfortable ~1.5cm above the loading line */
 .cat-pos{
-  position:absolute; top:-42px; left:0;
-  width:72px; height:38px;
+  position:absolute; top:12px; left:0;
+  width:78px; height:48px;
   will-change:transform;
   transform:translateX(0);
 }
-.cat-run{
-  display:block; width:72px; height:38px;
-  background-image:url('/__l5e/assets-v1/3a32ec4a-a406-4a62-b0b8-d19ed5c8d9ca/cat-run.png');
-  background-repeat:no-repeat;
-  background-size:contain;
-  background-position:center bottom;
-  animation:catTrot 0.5s ease-in-out infinite;
+.cat-svg{
+  display:block; width:78px; height:48px;
+  overflow:visible;
+  filter:drop-shadow(0 6px 6px rgba(0,0,0,0.5));
+  animation:catBob 0.62s ease-in-out infinite;
   transform-origin:50% 100%;
-  filter:drop-shadow(0 4px 5px rgba(0,0,0,0.55));
 }
-@keyframes catTrot{
-  0%,100% { transform:translateY(0) rotate(-1.2deg) scaleY(1); }
-  50%     { transform:translateY(-3px) rotate(1.2deg) scaleY(1.03); }
+@keyframes catBob{
+  0%,100%{ transform:translateY(0) rotate(-0.6deg); }
+  25%    { transform:translateY(-1.6px) rotate(0.4deg); }
+  50%    { transform:translateY(0) rotate(0.6deg); }
+  75%    { transform:translateY(-1.6px) rotate(-0.4deg); }
 }
+.cat-svg .leg{ animation:catLeg 0.62s ease-in-out infinite; }
+.cat-svg .leg-fr{ animation-delay:0s; }
+.cat-svg .leg-hl{ animation-delay:0s; }
+.cat-svg .leg-fl{ animation-delay:-0.31s; }
+.cat-svg .leg-hr{ animation-delay:-0.31s; }
+@keyframes catLeg{
+  0%   { transform:rotate(-26deg); }
+  35%  { transform:rotate(8deg); }
+  55%  { transform:rotate(22deg); }
+  100% { transform:rotate(-26deg); }
+}
+.cat-svg .tail{
+  transform-origin:24px 26px;
+  animation:catTail 1.24s ease-in-out infinite;
+}
+@keyframes catTail{
+  0%,100%{ transform:rotate(-7deg); }
+  50%    { transform:rotate(9deg); }
+}
+.cat-svg .head-grp{
+  transform-origin:78px 24px;
+  animation:catHead 1.24s ease-in-out infinite;
+}
+@keyframes catHead{
+  0%,100%{ transform:translateY(0) rotate(-1.5deg); }
+  50%    { transform:translateY(-1px) rotate(1.5deg); }
+}
+
 .loading-track{
   width:100%; height:3px; border-radius:3px;
   background:rgba(255,255,255,0.08);
@@ -404,7 +432,7 @@ main#app{ position:relative; z-index:1; }
   position:relative; min-width:1180px; width:max-content;
   overflow:visible;
 }
-.rope-svg{ position:absolute; top:0; left:0; width:100%; height:66px; display:block; }
+.rope-svg{ position:absolute; top:0; left:0; width:100%; display:block; overflow:visible; pointer-events:none; }
 .line-photo{ position:absolute; top:0; left:0; transform:translateX(-50%); z-index:2; }
 .clothespin{
   display:block; width:13px; height:25px; margin:0 auto;
@@ -541,7 +569,66 @@ main#app{ position:relative; z-index:1; }
   <div class="loading-mark">Suryanshu<span>.</span> Turns Sixteen</div>
   <div class="loading-track-wrap">
     <div class="cat-pos" id="cat-pos" aria-hidden="true">
-      <div class="cat-run"></div>
+      <svg class="cat-svg" viewBox="0 0 100 62" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="furGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2b2f3a"/>
+            <stop offset="0.55" stop-color="#171a22"/>
+            <stop offset="1" stop-color="#0d0f15"/>
+          </linearGradient>
+        </defs>
+
+        <!-- tail -->
+        <g class="tail">
+          <path d="M24,28 C12,26 6,18 9,9" fill="none" stroke="url(#furGrad)" stroke-width="5.4" stroke-linecap="round"/>
+          <path d="M9.5,10.5 C8.5,7 9,5 10.5,3.5" fill="none" stroke="#3a3f4d" stroke-width="4.6" stroke-linecap="round"/>
+        </g>
+
+        <!-- far legs (darker, behind body) -->
+        <g class="leg leg-hr" style="transform-origin:32px 34px">
+          <path d="M32,32 L31,50 L34,54" fill="none" stroke="#0b0d12" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <g class="leg leg-fl" style="transform-origin:66px 34px">
+          <path d="M66,32 L66,50 L69,54" fill="none" stroke="#0b0d12" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+
+        <!-- torso -->
+        <path d="M23,30 C22,20 32,15 46,15 C58,15 68,17 74,22 C79,26 79,34 72,36 C58,40 34,41 26,37 C23,35.5 23,33 23,30 Z" fill="url(#furGrad)"/>
+        <!-- haunch -->
+        <ellipse cx="30" cy="29" rx="11" ry="11.5" fill="url(#furGrad)"/>
+        <!-- chest -->
+        <ellipse cx="70" cy="29" rx="8.5" ry="9" fill="url(#furGrad)"/>
+
+        <!-- near legs -->
+        <g class="leg leg-hl" style="transform-origin:35px 34px">
+          <path d="M35,32 L34,50 L38,54" fill="none" stroke="#1b1f28" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <g class="leg leg-fr" style="transform-origin:70px 34px">
+          <path d="M70,32 L70,50 L73.5,54" fill="none" stroke="#1b1f28" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+
+        <!-- head -->
+        <g class="head-grp">
+          <path d="M73,20 C73,14 77,10 82,10 C88,10 92,14 92,20 C92,26 88,29.5 82.5,29.5 C77,29.5 73,26 73,20 Z" fill="url(#furGrad)"/>
+          <path d="M74.5,12.5 L74,4.5 L80.5,9.5 Z" fill="#1c2029"/>
+          <path d="M90,12 L91.5,4.5 L85,8.8 Z" fill="#1c2029"/>
+          <path d="M75.8,11.6 L75.6,7 L79.2,10 Z" fill="#4a3c46" opacity="0.8"/>
+          <path d="M89.2,11.4 L90.2,6.9 L86.4,9.6 Z" fill="#4a3c46" opacity="0.8"/>
+          <ellipse cx="86.5" cy="19" rx="2.1" ry="2.6" fill="#f0b45a"/>
+          <ellipse cx="86.5" cy="19" rx="0.7" ry="2.3" fill="#191b22"/>
+          <path d="M92,21.5 C93.6,22.2 94.2,23.2 93.8,24.2" fill="none" stroke="#5c6474" stroke-width="0.7" stroke-linecap="round"/>
+          <path d="M92,23 C93.8,24.1 94.2,25.2 93.9,26" fill="none" stroke="#5c6474" stroke-width="0.7" stroke-linecap="round"/>
+          <ellipse cx="91.2" cy="23.4" rx="1.5" ry="1.2" fill="#3d323a"/>
+        </g>
+
+        <!-- amber collar at the neck -->
+        <path d="M73.5,20.5 C73,24 73.4,27 74.6,29.4" fill="none" stroke="#e0a24d" stroke-width="1.8" stroke-linecap="round" opacity="0.9"/>
+        <!-- back highlight -->
+        <path d="M30,19.5 C42,15.5 60,16 71,21" fill="none" stroke="#454b5c" stroke-width="1.4" stroke-linecap="round" opacity="0.75"/>
+        <!-- ground shadow -->
+        <ellipse cx="52" cy="57.5" rx="26" ry="3" fill="#000" opacity="0.28"/>
+      </svg>
+
     </div>
     <div class="loading-track"><div class="loading-fill" id="loading-fill"></div></div>
     <div class="loading-percent" id="loading-percent">0%</div>
@@ -873,10 +960,10 @@ main#app{ position:relative; z-index:1; }
        ============================================================ -->
   <section id="scene-final" class="scene">
     <p class="eyebrow">Before you go</p>
-    <p class="final-thanks">Thank you for sixteen years of being exactly yourself. Here's to the road still ahead.</p>
+    <p class="final-thanks">Thank you for sixteen years of being exactly yourself. The road still ahead is all yours.</p>
     <p class="quote" id="quote-1">"You are my person."</p>
     <p class="quote" id="quote-2">"Life is brighter with you."</p>
-    <p class="quote" id="quote-3">"Cheers to another trip around the sun."</p>
+    <p class="quote" id="quote-3">"To another trip around the sun, together."</p>
     <div class="closing" id="closing-msg">
       With all of it
       <strong>Happy 16th, Suryanshu.</strong>
@@ -1029,7 +1116,7 @@ function runLoading(){
     displayProgress += (targetProgress - displayProgress) * 0.09;
     if(targetProgress >= 100 && displayProgress > 99.4) displayProgress = 100;
 
-    const trackWidth = trackWrap.clientWidth - 72;
+    const trackWidth = trackWrap.clientWidth - 78;
     catPos.style.transform = 'translateX(' + (trackWidth * displayProgress/100) + 'px)';
     fill.style.width = displayProgress + '%';
     pct.textContent = Math.round(displayProgress) + '%';
@@ -1451,7 +1538,13 @@ function buildClotheslines(){
     const cx = width/2 + (Math.random()*40-20);
     const cy = y0 + sag;
 
-    svg.setAttribute('viewBox', '0 0 ' + width + ' 70');
+    const svgH = Math.ceil(cy + 24);
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + svgH);
+    svg.setAttribute('width', width);
+    svg.setAttribute('height', svgH);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.style.height = svgH + 'px';
+    svg.style.width = width + 'px';
     svg.innerHTML =
       '<defs><linearGradient id="ropeGrad'+row.id+'" x1="0" x2="1" y1="0" y2="0">' +
       '<stop offset="0" stop-color="#6b5c42"/><stop offset="0.5" stop-color="#8d7854"/>' +
