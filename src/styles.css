@@ -4,6 +4,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@font-face {
+  font-family: "Akrux";
+  src: url("/__l5e/assets-v1/e7670614-4057-4f3c-8083-b5332ec7d504/Akrux-Light.otf") format("opentype");
+  font-weight: 300 900;
+  font-display: swap;
+}
+
+
 /*
  * Design system definition.
  *
