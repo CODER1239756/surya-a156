@@ -39,6 +39,14 @@
   --hand: 'Caveat', cursive;
 }
 
+@font-face{
+  font-family:'Akrux';
+  src:url('/__l5e/assets-v1/e7670614-4057-4f3c-8083-b5332ec7d504/Akrux-Light.otf') format('opentype');
+  font-weight:300 900;
+  font-display:swap;
+}
+h1,h2,.reveal-title,.gallery-title h2,.final-thanks{ font-family:'Akrux', var(--serif) !important; letter-spacing:.02em; }
+
 *{ box-sizing:border-box; margin:0; padding:0; }
 html,body{ background:var(--bg); color:var(--cream); }
 body{
@@ -751,16 +759,7 @@ main#app{ position:relative; z-index:1; }
             </div>
           </div>
 
-          <div class="line-photo" data-tilt="3.2">
-            <span class="clothespin"></span>
-            <div class="photo-hang" style="--tilt:3.2deg; --delay:0.09s;">
-              <div class="photo-inner" style="padding:0; background:none;">
-                <img src="assets/gallery/memory-11.jpeg" alt="A memory of Suryanshu" loading="lazy" style="width:100%; height:100%; object-fit:cover; border-radius:1px; display:block;">
-              </div>
-              <div class="photo-caption">one more take of the same afternoon</div>
-            </div>
-          </div>
-
+          
           <div class="line-photo" data-tilt="2.4">
             <span class="clothespin"></span>
             <div class="photo-hang" style="--tilt:2.4deg; --delay:0.58s;">
