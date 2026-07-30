@@ -4,7 +4,7 @@ import { fetchApprovedWishes, signedWishImageUrl, type WishRow } from "@/lib/wis
 import { useAdminShortcut } from "@/lib/use-admin-shortcut";
 
 const CORK_TEXTURE = "/__l5e/assets-v1/f1f631ab-0203-448f-8fa1-89d8b34a97b7/cork-board.jpg";
-const HEADING_FONT = "'Orbitron', 'Trebuchet MS', sans-serif";
+const HEADING_FONT = "'Akrux', 'Trebuchet MS', sans-serif";
 
 export const Route = createFileRoute("/bulletin")({
   head: () => ({
