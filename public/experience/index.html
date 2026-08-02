@@ -111,14 +111,12 @@ a{ color:inherit; }
    to keep the same small clearance above the line at every size */
 .cat-pos{
   position:absolute; left:0;
-  top: calc(100% - 0px);                  /* overridden below */
-  bottom: auto;
   width:var(--cat-w); height:var(--cat-h);
   will-change:transform;
   transform:translateX(0);
 }
 .loading-track-wrap .cat-pos{
-  top: calc(var(--cat-h) * 0.129 + 18px - var(--cat-gap));
+  top: calc(var(--cat-h) * 0.129 + 18px);
 }
 .cat-svg{
   display:block; width:100%; height:100%;
@@ -1241,7 +1239,7 @@ function runLoading(){
     displayProgress += (targetProgress - displayProgress) * 0.09;
     if(targetProgress >= 100 && displayProgress > 99.4) displayProgress = 100;
 
-    const trackWidth = trackWrap.clientWidth - 84;
+    const trackWidth = trackWrap.clientWidth - catPos.offsetWidth;
     catPos.style.transform = 'translateX(' + (trackWidth * displayProgress/100) + 'px)';
     fill.style.width = displayProgress + '%';
     pct.textContent = Math.round(displayProgress) + '%';
