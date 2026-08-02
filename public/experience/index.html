@@ -99,24 +99,33 @@ a{ color:inherit; }
 .loading-mark span{ color:var(--amber-soft); }
 
 .loading-track-wrap{
+  /* --cat-w scales the cat with the viewport; everything else derives from it */
+  --cat-w: clamp(46px, 9.5vw, 84px);
+  --cat-h: calc(var(--cat-w) * 0.619);   /* svg aspect 84 x 52 */
+  --cat-gap: 6px;                         /* clearance between paws and the line */
   width:min(420px, 78vw);
   position:relative;
-  padding-top:100px;
+  padding-top: calc(var(--cat-h) + var(--cat-gap) + 18px);
 }
-/* cat walks a comfortable ~1.5cm above the loading line */
+/* the cat's paws sit at ~87% of the svg height, so offset by that much
+   to keep the same small clearance above the line at every size */
 .cat-pos{
-  position:absolute; top:10px; left:0;
-  width:84px; height:52px;
+  position:absolute; left:0;
+  width:var(--cat-w); height:var(--cat-h);
   will-change:transform;
   transform:translateX(0);
 }
+.loading-track-wrap .cat-pos{
+  top: calc(var(--cat-h) * 0.129 + 18px);
+}
 .cat-svg{
-  display:block; width:84px; height:52px;
+  display:block; width:100%; height:100%;
   overflow:visible;
-  filter:drop-shadow(0 7px 7px rgba(0,0,0,0.45));
+  filter:drop-shadow(0 calc(var(--cat-h) * 0.13) calc(var(--cat-h) * 0.13) rgba(0,0,0,0.45));
   animation:catBob 0.72s ease-in-out infinite;
   transform-origin:50% 100%;
 }
+
 @keyframes catBob{
   0%,100%{ transform:translateY(0.5px); }
   25%    { transform:translateY(-1.1px); }
@@ -1230,7 +1239,7 @@ function runLoading(){
     displayProgress += (targetProgress - displayProgress) * 0.09;
     if(targetProgress >= 100 && displayProgress > 99.4) displayProgress = 100;
 
-    const trackWidth = trackWrap.clientWidth - 84;
+    const trackWidth = trackWrap.clientWidth - catPos.offsetWidth;
     catPos.style.transform = 'translateX(' + (trackWidth * displayProgress/100) + 'px)';
     fill.style.width = displayProgress + '%';
     pct.textContent = Math.round(displayProgress) + '%';
