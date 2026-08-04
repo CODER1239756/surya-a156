@@ -10,15 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SubmitRouteImport } from './routes/submit'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as BulletinRouteImport } from './routes/bulletin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminSetupRouteImport } from './routes/admin/setup'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AdminForgotRouteImport } from './routes/admin/forgot'
 
 const SubmitRoute = SubmitRouteImport.update({
   id: '/submit',
   path: '/submit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BulletinRoute = BulletinRouteImport.update({
@@ -46,11 +53,18 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminForgotRoute = AdminForgotRouteImport.update({
+  id: '/admin/forgot',
+  path: '/admin/forgot',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bulletin': typeof BulletinRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/submit': typeof SubmitRoute
+  '/admin/forgot': typeof AdminForgotRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/setup': typeof AdminSetupRoute
   '/admin/': typeof AdminIndexRoute
@@ -58,7 +72,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bulletin': typeof BulletinRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/submit': typeof SubmitRoute
+  '/admin/forgot': typeof AdminForgotRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/setup': typeof AdminSetupRoute
   '/admin': typeof AdminIndexRoute
@@ -67,7 +83,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/bulletin': typeof BulletinRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/submit': typeof SubmitRoute
+  '/admin/forgot': typeof AdminForgotRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/setup': typeof AdminSetupRoute
   '/admin/': typeof AdminIndexRoute
@@ -77,17 +95,29 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/bulletin'
+    | '/reset-password'
     | '/submit'
+    | '/admin/forgot'
     | '/admin/login'
     | '/admin/setup'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bulletin' | '/submit' | '/admin/login' | '/admin/setup' | '/admin'
+  to:
+    | '/'
+    | '/bulletin'
+    | '/reset-password'
+    | '/submit'
+    | '/admin/forgot'
+    | '/admin/login'
+    | '/admin/setup'
+    | '/admin'
   id:
     | '__root__'
     | '/'
     | '/bulletin'
+    | '/reset-password'
     | '/submit'
+    | '/admin/forgot'
     | '/admin/login'
     | '/admin/setup'
     | '/admin/'
@@ -96,7 +126,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BulletinRoute: typeof BulletinRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SubmitRoute: typeof SubmitRoute
+  AdminForgotRoute: typeof AdminForgotRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminSetupRoute: typeof AdminSetupRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -109,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/submit'
       fullPath: '/submit'
       preLoaderRoute: typeof SubmitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bulletin': {
@@ -146,13 +185,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/forgot': {
+      id: '/admin/forgot'
+      path: '/admin/forgot'
+      fullPath: '/admin/forgot'
+      preLoaderRoute: typeof AdminForgotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BulletinRoute: BulletinRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SubmitRoute: SubmitRoute,
+  AdminForgotRoute: AdminForgotRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminSetupRoute: AdminSetupRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -160,13 +208,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
