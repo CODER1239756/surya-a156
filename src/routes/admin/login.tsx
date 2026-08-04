@@ -47,7 +47,10 @@ function LoginPage() {
           {err && <p style={{ color: "#ff9a9a" }}>{err}</p>}
           <button type="submit" disabled={busy} style={btn}>{busy ? "Signing in…" : "Sign in"}</button>
         </form>
-        <p style={{ marginTop: 18, fontSize: 13, color: "#8a94a8" }}>
+        <p style={{ marginTop: 14, fontSize: 13, color: "#8a94a8" }}>
+          <Link to="/admin/forgot" style={{ color: "#e94f4f" }}>Forgot your password?</Link>
+        </p>
+        <p style={{ marginTop: 8, fontSize: 13, color: "#8a94a8" }}>
           First time? <Link to="/admin/setup" style={{ color: "#e94f4f" }}>Set up the admin account</Link>.
         </p>
       </div>
