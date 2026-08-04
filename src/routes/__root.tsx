@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Suryanshu Turns Sixteen — A birthday experience" },
+      { name: "description", content: "An immersive birthday experience for Suryanshu's sixteenth — memories, wishes, and a Wish Well bulletin board from friends and family." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Suryanshu Turns Sixteen — A birthday experience" },
+      { property: "og:description", content: "An immersive birthday experience for Suryanshu's sixteenth — memories, wishes, and a Wish Well bulletin board from friends and family." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Suryanshu Turns Sixteen — A birthday experience" },
+      { name: "twitter:description", content: "An immersive birthday experience for Suryanshu's sixteenth — memories, wishes, and a Wish Well bulletin board from friends and family." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e97cfa83-1f0a-4acd-9d70-b479f35461a5/id-preview-08e38102--7043b751-9167-41a9-8459-ed122a165c0b.lovable.app-1785639794472.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e97cfa83-1f0a-4acd-9d70-b479f35461a5/id-preview-08e38102--7043b751-9167-41a9-8459-ed122a165c0b.lovable.app-1785639794472.png" },
     ],
     links: [
       {

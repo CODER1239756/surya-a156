@@ -10,11 +10,11 @@ export const Route = createFileRoute("/")({
         content:
           "An immersive birthday experience for Suryanshu's sixteenth — memories, wishes, and a Wish Well bulletin board from friends and family.",
       },
-      { property: "og:title", content: "Suryanshu Turns Sixteen" },
+      { property: "og:title", content: "Suryanshu Turns Sixteen — A birthday experience" },
       {
         property: "og:description",
         content:
-          "An immersive birthday experience for Suryanshu's sixteenth — memories, wishes, and a Wish Well bulletin board.",
+          "An immersive birthday experience for Suryanshu's sixteenth — memories, wishes, and a Wish Well bulletin board from friends and family.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
