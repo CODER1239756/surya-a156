@@ -1,6 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { resetAdminPasswordWithCode } from "@/lib/admin-setup.functions";
 
 export const Route = createFileRoute("/admin/forgot")({
   head: () => ({
