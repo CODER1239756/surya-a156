@@ -64,3 +64,52 @@ export const createFirstAdmin = createServerFn({ method: "POST" })
 
     return { ok: true as const, email: data.email };
   });
+
+/**
+ * Emergency password reset for an existing admin, using the server-side
+ * ADMIN_RECOVERY_CODE. Does not depend on email delivery.
+ */
+export const resetAdminPasswordWithCode = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        email: z.string().trim().email().max(255),
+        code: z.string().min(1).max(200),
+        password: z.string().min(8).max(128),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }) => {
+    const expected = process.env["ADMIN_RECOVERY_CODE"];
+    if (!expected) throw new Error("Recovery is not configured.");
+    if (data.code !== expected) throw new Error("Invalid recovery code.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: list, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
+      page: 1,
+      perPage: 200,
+    });
+    if (listErr) throw new Error(listErr.message);
+
+    const target = list.users.find(
+      (u) => (u.email ?? "").toLowerCase() === data.email.toLowerCase(),
+    );
+    if (!target) throw new Error("No account found for that email.");
+
+    const { data: roles, error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", target.id)
+      .eq("role", "admin");
+    if (roleErr) throw new Error(roleErr.message);
+    if (!roles || roles.length === 0) throw new Error("That account is not an admin.");
+
+    const { error: updErr } = await supabaseAdmin.auth.admin.updateUserById(target.id, {
+      password: data.password,
+      email_confirm: true,
+    });
+    if (updErr) throw new Error(updErr.message);
+
+    return { ok: true as const };
+  });
