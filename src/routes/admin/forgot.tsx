@@ -19,10 +19,18 @@ export const Route = createFileRoute("/admin/forgot")({
 });
 
 function ForgotPage() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  const [code, setCode] = useState("");
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [cErr, setCErr] = useState<string | null>(null);
+  const [cBusy, setCBusy] = useState(false);
+  const [cDone, setCDone] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,6 +42,25 @@ function ForgotPage() {
     setBusy(false);
     if (error) return setErr(error.message);
     setSent(true);
+  }
+
+  async function onCodeReset(e: React.FormEvent) {
+    e.preventDefault();
+    setCErr(null);
+    if (pw.length < 8) return setCErr("Password must be at least 8 characters.");
+    if (pw !== pw2) return setCErr("Passwords do not match.");
+    setCBusy(true);
+    try {
+      await resetAdminPasswordWithCode({
+        data: { email: email.trim(), code: code.trim(), password: pw },
+      });
+      setCDone(true);
+      setTimeout(() => navigate({ to: "/admin/login" }), 1200);
+    } catch (e2) {
+      setCErr(e2 instanceof Error ? e2.message : "Could not reset password.");
+    } finally {
+      setCBusy(false);
+    }
   }
 
   return (
@@ -62,6 +89,30 @@ function ForgotPage() {
             </button>
           </form>
         )}
+
+        <hr style={{ margin: "26px 0 18px", border: 0, borderTop: "1px solid #2d3a52" }} />
+
+        <h2 style={{ margin: "0 0 6px", fontSize: 16 }}>No email? Use your recovery code</h2>
+        <p style={{ margin: "0 0 6px", fontSize: 13, color: "#8a94a8", lineHeight: 1.6 }}>
+          Enter the admin email above, then your recovery code and a new password.
+        </p>
+        {cDone ? (
+          <p style={{ color: "#9fe3a5" }}>Password updated. Taking you to login…</p>
+        ) : (
+          <form onSubmit={onCodeReset}>
+            <label style={lbl}>Recovery code</label>
+            <input type="password" required value={code} onChange={(e) => setCode(e.target.value)} style={inp} autoComplete="one-time-code" />
+            <label style={lbl}>New password</label>
+            <input type="password" required value={pw} onChange={(e) => setPw(e.target.value)} style={inp} autoComplete="new-password" />
+            <label style={lbl}>Confirm new password</label>
+            <input type="password" required value={pw2} onChange={(e) => setPw2(e.target.value)} style={inp} autoComplete="new-password" />
+            {cErr && <p style={{ color: "#ff9a9a" }}>{cErr}</p>}
+            <button type="submit" disabled={cBusy} style={btn}>
+              {cBusy ? "Updating…" : "Reset password with code"}
+            </button>
+          </form>
+        )}
+
         <p style={{ marginTop: 18, fontSize: 13, color: "#8a94a8" }}>
           <Link to="/admin/login" style={{ color: "#e94f4f" }}>Back to login</Link>
         </p>
